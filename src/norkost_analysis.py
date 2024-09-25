@@ -24,16 +24,17 @@ df_energy = pd.read_excel(file_path, sheet_name=energy_sheet, header= None)
 df_background = df_background.iloc[:, :-3]  # drop the last three columns
 df_background.drop(columns=['Hushold1'], inplace=True)#drop the household column
 df_background.rename(columns={'Nr': 'ID'}, inplace=True)  # rename Nr to ID
-df_background.rename(columns={"Alder": "Age", "Utdann1": "Education", "Kjønn":"Gender"}, inplace=True)  # rename columns
+df_background.rename(columns={"Alder": "Age", "Utdann1": "Education", "Kjønn":"Gender","Landsdel":"Region"}, inplace=True)  # rename columns
 df_background['Education'] = df_background['Education'].map({
+    0: "None",
     1: "Primary school",
-    2: "Lower secondary school",
-    3: "Upper secondary school",
-    4: "Post-secondary non-tertiary",
-    5: "Short-cycle tertiary",
-    6: "Bachelor's or equivalent",
-    7: "Master's or equivalent",
-    8: "Doctoral or equivalent"
+    2: "Middle school",
+    3: "High school",
+    4: "Higher secondary",
+    5: "Vocational training",
+    6: "Undergraduate",
+    7: "Postgraduate",
+    9: "Unanswered"
 })
 
 # Cleaning the foodgroups data
@@ -56,7 +57,7 @@ df_energy = df_energy.drop(1)#drop the first row
 df_energy.reset_index(drop=True, inplace=True)#Reset the index
 df_energy['Energy'] = df_energy['Energy'] / 4.184 # Convert energy intake from KJ to Kcal
 
-#%%
+
 # Energy analysis
 # Merge df_background and df_energy
 df_energy_m = pd.merge(df_energy, df_background, on='ID')
@@ -102,7 +103,6 @@ plt.ylabel('Energy intake (Kcal) per day')
 plt.legend(title='Gender')
 plt.show()
 
-#%%
 # Food groups analysis
 
 # Classifying the food groups 
@@ -203,13 +203,13 @@ if len(unmapped_codes) > 0:
 # Calculate the total amount of food consumed per category
 df_food = df_long.groupby(['ID', 'Category'])['Amount'].sum().reset_index()
 df_food = df_food.pivot(index='ID', columns='Category', values='Amount').reset_index()
-df_food = pd.merge(df_background, df_food, on='ID') # Merge with background data
+df_food = pd.merge(df_background[['ID', 'Age', 'Gender', 'Education', 'Region']], df_food, on='ID') # Merge with background data including Region
 df_food['Gender'] = df_food['Gender'].map({1: 'Male', 2: 'Female'}) # Map gender numeric values to strings
 
-#%%
+
 # Plotting average consumption of male and female by food categories
 # Calculate average consumption by gender
-categories = [c for c in categories if c not in ['Beverages', 'Miscellaneous']]
+categories = [c for c in df_food.columns if c not in ['ID', 'Age', 'Gender', 'Education', 'AgeGroup', 'Beverages', 'Miscellaneous']]
 average_consumption = df_food.groupby('Gender')[categories].mean().T
 
 # Plot average consumption by gender and leave out beverages and miscellaneous categories
@@ -222,9 +222,6 @@ plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.show()
 
-# Plotting consumption of food categories by 10 year age group
-
-#%%
 # Calculate average consumption by age group
 # Create 10-year age groups
 df_food['AgeGroup'] = pd.cut(df_food['Age'], bins=range(0, 101, 10), right=False, labels=[f'{i}-{i+9}' for i in range(0, 100, 10)])
@@ -247,20 +244,53 @@ food_group_colors = {
     'Beverages': '#aab7b8',
     'Miscellaneous': '#34495e'
 }
-
+#%%
 # Ensure the colors are applied in the correct order
 colors = [food_group_colors[category] for category in average_consumption_age_group.index]
 
 # Plot average consumption by age group with age groups on y axis and food categories as stacked bars
 average_consumption_age_group.T.plot(kind='barh', stacked=True, figsize=(14, 8), color=colors)
 plt.title('Average Consumption by Food Category and Age Group')
-plt.xlabel('Average Amount Consumed')
+plt.xlabel('Average Amount Consumed (g)')
 plt.ylabel('Age Group')
 plt.legend(title='Food Category', bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
 plt.show()
 
 #%%
-# Plotting consumption of food categories by education level
+# Plotting consumption of food categories by education level and food categories
 # Calculate average consumption by education level
-# De                   
+average_consumption_education = df_food.groupby('Education')[categories].mean().T
+# Plot average consumption by education level on y axis and categories as stacked bars
+average_consumption_education.T.plot(kind='barh', stacked=True, figsize=(14, 8), color = colors)
+plt.title('Average Consumption by Food Category and Education Level')
+plt.xlabel('Average Amount Consumed (g)')
+plt.ylabel('Education Level')
+plt.legend(title='Food Category', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+#%%
+# Calculate average consumption by region
+average_consumption_region = df_food.groupby('Region')[categories].mean()
+
+# Plot average consumption by region with subplots for each food category
+regions = average_consumption_region.index
+fig, axes = plt.subplots(nrows=len(regions), ncols=1, figsize=(14, 2 * len(regions)), sharex=True)
+
+for i, region in enumerate(regions):
+    average_consumption_region.loc[region].plot(kind='bar', ax=axes[i], color=colors[:len(categories)])
+    axes[i].set_title(f'Average Consumption by Food Category in {region}')
+    if i == len(regions) - 1:
+        axes[i].set_xlabel('Food Category')
+    else:
+        axes[i].set_xlabel('')
+    axes[i].set_xticks(range(len(categories)))
+    axes[i].set_xticklabels(categories, rotation=45, ha='right')
+    if i == len(regions) // 2:
+        axes[i].set_ylabel('Average Amount Consumed (g)')
+    else:
+        axes[i].set_ylabel('')
+
+plt.tight_layout(pad=2.0)
+plt.show()
+# %%
