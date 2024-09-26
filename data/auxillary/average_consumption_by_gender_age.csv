@@ -1,0 +1,201 @@
+Gender,AgeGroup,FoodCategory,Average amount consumed (g)
+Female,0-9,Fruits and nuts,0.0
+Female,10-19,Fruits and nuts,410.6857142857143
+Female,20-29,Fruits and nuts,545.8486880597111
+Female,30-39,Fruits and nuts,671.0630127269178
+Female,40-49,Fruits and nuts,628.0524348568485
+Female,50-59,Fruits and nuts,700.6247101431251
+Female,60-69,Fruits and nuts,752.4949221556886
+Female,70-79,Fruits and nuts,717.6999999999999
+Female,80-89,Fruits and nuts,0.0
+Female,90-99,Fruits and nuts,0.0
+Male,0-9,Fruits and nuts,0.0
+Male,10-19,Fruits and nuts,460.1941176470588
+Male,20-29,Fruits and nuts,510.4633001134339
+Male,30-39,Fruits and nuts,554.0507352941177
+Male,40-49,Fruits and nuts,564.2251396648046
+Male,50-59,Fruits and nuts,634.3562500000002
+Male,60-69,Fruits and nuts,732.3111519607846
+Male,70-79,Fruits and nuts,680.946153846154
+Male,80-89,Fruits and nuts,0.0
+Male,90-99,Fruits and nuts,0.0
+Female,0-9,Vegetables,0.0
+Female,10-19,Vegetables,260.0971531469731
+Female,20-29,Vegetables,430.0611418962205
+Female,30-39,Vegetables,458.99150800733105
+Female,40-49,Vegetables,488.84483725977555
+Female,50-59,Vegetables,457.1631364136617
+Female,60-69,Vegetables,473.4879027109304
+Female,70-79,Vegetables,411.5619595007167
+Female,80-89,Vegetables,0.0
+Female,90-99,Vegetables,0.0
+Male,0-9,Vegetables,0.0
+Male,10-19,Vegetables,387.0764705882353
+Male,20-29,Vegetables,548.9615818249154
+Male,30-39,Vegetables,452.28494491620324
+Male,40-49,Vegetables,448.2924154640582
+Male,50-59,Vegetables,467.23339548376424
+Male,60-69,Vegetables,413.08431148486295
+Male,70-79,Vegetables,457.1923076923077
+Male,80-89,Vegetables,0.0
+Male,90-99,Vegetables,0.0
+Female,0-9,Starchy vegetables,0.0
+Female,10-19,Starchy vegetables,48.75714285714286
+Female,20-29,Starchy vegetables,83.97209302325584
+Female,30-39,Starchy vegetables,94.51360946745564
+Female,40-49,Starchy vegetables,96.93671875
+Female,50-59,Starchy vegetables,104.86632124352332
+Female,60-69,Starchy vegetables,122.15066666666665
+Female,70-79,Starchy vegetables,138.7
+Female,80-89,Starchy vegetables,0.0
+Female,90-99,Starchy vegetables,0.0
+Male,0-9,Starchy vegetables,0.0
+Male,10-19,Starchy vegetables,136.16470588235296
+Male,20-29,Starchy vegetables,110.71900826446281
+Male,30-39,Starchy vegetables,127.15882352941175
+Male,40-49,Starchy vegetables,147.94413407821222
+Male,50-59,Starchy vegetables,188.78333333333327
+Male,60-69,Starchy vegetables,220.1553921568628
+Male,70-79,Starchy vegetables,233.5230769230769
+Male,80-89,Starchy vegetables,0.0
+Male,90-99,Starchy vegetables,0.0
+Female,0-9,Grains and cereals,0.0
+Female,10-19,Grains and cereals,556.9785714285714
+Female,20-29,Grains and cereals,620.3283661957047
+Female,30-39,Grains and cereals,663.9051664701439
+Female,40-49,Grains and cereals,600.1368828569214
+Female,50-59,Grains and cereals,552.0352523764805
+Female,60-69,Grains and cereals,520.2219302050544
+Female,70-79,Grains and cereals,581.2315783501646
+Female,80-89,Grains and cereals,0.0
+Female,90-99,Grains and cereals,0.0
+Male,0-9,Grains and cereals,0.0
+Male,10-19,Grains and cereals,1171.8764705882352
+Male,20-29,Grains and cereals,1043.3290060492168
+Male,30-39,Grains and cereals,934.7396931250842
+Male,40-49,Grains and cereals,858.7489238740595
+Male,50-59,Grains and cereals,800.3353800386343
+Male,60-69,Grains and cereals,761.6194036906674
+Male,70-79,Grains and cereals,846.0338018638697
+Male,80-89,Grains and cereals,0.0
+Male,90-99,Grains and cereals,0.0
+Female,0-9,Legumes,0.0
+Female,10-19,Legumes,0.5
+Female,20-29,Legumes,0.589922480620155
+Female,30-39,Legumes,2.1065088757396446
+Female,40-49,Legumes,2.0218139648437496
+Female,50-59,Legumes,2.828497409326425
+Female,60-69,Legumes,2.3333333333333335
+Female,70-79,Legumes,0.0
+Female,80-89,Legumes,0.0
+Female,90-99,Legumes,0.0
+Male,0-9,Legumes,0.0
+Male,10-19,Legumes,0.0
+Male,20-29,Legumes,2.0983471074380167
+Male,30-39,Legumes,2.8360294117647054
+Male,40-49,Legumes,1.7402234636871508
+Male,50-59,Legumes,3.044791666666667
+Male,60-69,Legumes,3.125490196078431
+Male,70-79,Legumes,1.8461538461538463
+Male,80-89,Legumes,0.0
+Male,90-99,Legumes,0.0
+Female,0-9,Dairy and alternatives,0.0
+Female,10-19,Dairy and alternatives,580.6089876079444
+Female,20-29,Dairy and alternatives,782.5253587171859
+Female,30-39,Dairy and alternatives,731.7068616520173
+Female,40-49,Dairy and alternatives,663.2274436187075
+Female,50-59,Dairy and alternatives,631.5006457244439
+Female,60-69,Dairy and alternatives,645.0683925513711
+Female,70-79,Dairy and alternatives,651.3637555229898
+Female,80-89,Dairy and alternatives,0.0
+Female,90-99,Dairy and alternatives,0.0
+Male,0-9,Dairy and alternatives,0.0
+Male,10-19,Dairy and alternatives,926.4138496640185
+Male,20-29,Dairy and alternatives,1190.1884273653927
+Male,30-39,Dairy and alternatives,1083.2227708406256
+Male,40-49,Dairy and alternatives,1005.7545818363146
+Male,50-59,Dairy and alternatives,957.9584852900165
+Male,60-69,Dairy and alternatives,868.6743565801297
+Male,70-79,Dairy and alternatives,727.6807574636566
+Male,80-89,Dairy and alternatives,0.0
+Male,90-99,Dairy and alternatives,0.0
+Female,0-9,Red meat,0.0
+Female,10-19,Red meat,377.8642857142857
+Female,20-29,Red meat,275.04186046511643
+Female,30-39,Red meat,280.2136094674555
+Female,40-49,Red meat,281.54414062499984
+Female,50-59,Red meat,267.5512953367875
+Female,60-69,Red meat,257.25733333333335
+Female,70-79,Red meat,249.6857142857143
+Female,80-89,Red meat,0.0
+Female,90-99,Red meat,0.0
+Male,0-9,Red meat,0.0
+Male,10-19,Red meat,611.2294117647059
+Male,20-29,Red meat,513.0942148760331
+Male,30-39,Red meat,442.3786764705883
+Male,40-49,Red meat,458.4731843575417
+Male,50-59,Red meat,442.38567708333335
+Male,60-69,Red meat,381.603431372549
+Male,70-79,Red meat,427.95384615384614
+Male,80-89,Red meat,0.0
+Male,90-99,Red meat,0.0
+Female,0-9,Poultry,0.0
+Female,10-19,Poultry,18.442857142857143
+Female,20-29,Poultry,58.003875968992226
+Female,30-39,Poultry,54.193491124260326
+Female,40-49,Poultry,49.23984375
+Female,50-59,Poultry,54.44870466321245
+Female,60-69,Poultry,31.036000000000005
+Female,70-79,Poultry,2.685714285714286
+Female,80-89,Poultry,0.0
+Female,90-99,Poultry,0.0
+Male,0-9,Poultry,0.0
+Male,10-19,Poultry,24.98823529411765
+Male,20-29,Poultry,95.64049586776862
+Male,30-39,Poultry,66.37499999999999
+Male,40-49,Poultry,66.88715083798883
+Male,50-59,Poultry,59.28124999999999
+Male,60-69,Poultry,49.87254901960783
+Male,70-79,Poultry,54.93846153846154
+Male,80-89,Poultry,0.0
+Male,90-99,Poultry,0.0
+Female,0-9,Eggs,0.0
+Female,10-19,Eggs,4.178571428571429
+Female,20-29,Eggs,18.28527131782946
+Female,30-39,Eggs,18.734319526627218
+Female,40-49,Eggs,24.176953125000008
+Female,50-59,Eggs,26.85906735751295
+Female,60-69,Eggs,25.208666666666662
+Female,70-79,Eggs,27.95
+Female,80-89,Eggs,0.0
+Female,90-99,Eggs,0.0
+Male,0-9,Eggs,0.0
+Male,10-19,Eggs,19.36470588235294
+Male,20-29,Eggs,35.22396694214875
+Male,30-39,Eggs,28.21985294117647
+Male,40-49,Eggs,22.587709497206703
+Male,50-59,Eggs,29.256770833333338
+Male,60-69,Eggs,26.18970588235294
+Male,70-79,Eggs,24.161538461538463
+Male,80-89,Eggs,0.0
+Male,90-99,Eggs,0.0
+Female,0-9,Fish,0.0
+Female,10-19,Fish,127.95000000000002
+Female,20-29,Fish,93.1922480620155
+Female,30-39,Fish,118.92426035502957
+Female,40-49,Fish,147.60937499999991
+Female,50-59,Fish,184.14455958549226
+Female,60-69,Fish,197.48600000000005
+Female,70-79,Fish,267.06428571428575
+Female,80-89,Fish,0.0
+Female,90-99,Fish,0.0
+Male,0-9,Fish,0.0
+Male,10-19,Fish,82.89999999999999
+Male,20-29,Fish,131.38595041322313
+Male,30-39,Fish,190.91397058823526
+Male,40-49,Fish,165.00782122905028
+Male,50-59,Fish,246.08697916666665
+Male,60-69,Fish,303.07549019607865
+Male,70-79,Fish,296.62307692307695
+Male,80-89,Fish,0.0
+Male,90-99,Fish,0.0
