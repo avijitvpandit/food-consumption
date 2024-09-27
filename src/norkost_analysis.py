@@ -317,32 +317,86 @@ print(f"Average consumption by gender and age group has been exported to {output
 food_composition_path = os.path.join('..', 'data', 'auxillary', 'food_composition.xlsx')
 df_food_composition = pd.read_excel(food_composition_path)
 # Calculate the percentage of dry matter, fat, protein, and carbohydrates for age, gender and food category
+average_consumption_gender_age_long['TotalDryMatter'] = (
+    average_consumption_gender_age_long['Average amount consumed (g)'] *
+    average_consumption_gender_age_long['FoodCategory'].map(df_food_composition.set_index('Categories')['Percent Dry Matter']) / 100
+)
 
-# Merge the food composition data with the average consumption data
-df_merged = pd.merge(average_consumption_gender_age_long, df_food_composition, left_on='FoodCategory', right_on='FoodGroup')
+average_consumption_gender_age_long['TotalFat'] = (
+    average_consumption_gender_age_long['Average amount consumed (g)'] *
+    average_consumption_gender_age_long['FoodCategory'].map(df_food_composition.set_index('Categories')['Fat (g)']) / 100
+)
 
-# Calculate the total amount of each nutrient consumed
-df_merged['TotalDryMatter'] = df_merged['Average amount consumed (g)'] * df_merged['DryMatter'] / 100
-df_merged['TotalFat'] = df_merged['Average amount consumed (g)'] * df_merged['Fat'] / 100
-df_merged['TotalProtein'] = df_merged['Average amount consumed (g)'] * df_merged['Protein'] / 100
-df_merged['TotalCarbohydrates'] = df_merged['Average amount consumed (g)'] * df_merged['Carbohydrates'] / 100
+average_consumption_gender_age_long['TotalProtein'] = (
+    average_consumption_gender_age_long['Average amount consumed (g)'] *
+    average_consumption_gender_age_long['FoodCategory'].map(df_food_composition.set_index('Categories')['Protein (g)']) / 100
+)
 
-# Group by Gender, AgeGroup, and FoodCategory to calculate the percentage of each nutrient
-df_nutrient_percentage = df_merged.groupby(['Gender', 'AgeGroup', 'FoodCategory']).agg({
+average_consumption_gender_age_long['TotalCarbohydrates'] = (
+    average_consumption_gender_age_long['Average amount consumed (g)'] *
+    average_consumption_gender_age_long['FoodCategory'].map(df_food_composition.set_index('Categories')['Carbohydrate (g)']) / 100
+)
+
+# TotalCalories should NOT be divided by 100 because it's already per 100g in the food composition data
+average_consumption_gender_age_long['TotalCalories'] = (
+    average_consumption_gender_age_long['Average amount consumed (g)'] *
+    average_consumption_gender_age_long['FoodCategory'].map(df_food_composition.set_index('Categories')['Kilokalorier (kcal)'])/100
+)
+
+# Group by Gender, AgeGroup, and FoodCategory to calculate the total amount of each nutrient
+df_nutrient_totals = average_consumption_gender_age_long.groupby(['Gender', 'AgeGroup', 'FoodCategory']).agg({
     'TotalDryMatter': 'sum',
     'TotalFat': 'sum',
     'TotalProtein': 'sum',
-    'TotalCarbohydrates': 'sum'
+    'TotalCarbohydrates': 'sum',
+    'TotalCalories': 'sum'
 }).reset_index()
 
-# Calculate the percentage of each nutrient
-df_nutrient_percentage['PercentageDryMatter'] = df_nutrient_percentage['TotalDryMatter'] / df_nutrient_percentage.groupby(['Gender', 'AgeGroup'])['TotalDryMatter'].transform('sum') * 100
-df_nutrient_percentage['PercentageFat'] = df_nutrient_percentage['TotalFat'] / df_nutrient_percentage.groupby(['Gender', 'AgeGroup'])['TotalFat'].transform('sum') * 100
-df_nutrient_percentage['PercentageProtein'] = df_nutrient_percentage['TotalProtein'] / df_nutrient_percentage.groupby(['Gender', 'AgeGroup'])['TotalProtein'].transform('sum') * 100
-df_nutrient_percentage['PercentageCarbohydrates'] = df_nutrient_percentage['TotalCarbohydrates'] / df_nutrient_percentage.groupby(['Gender', 'AgeGroup'])['TotalCarbohydrates'].transform('sum') * 100
+# Drop rows where TotalCalories is 0
+df_nutrient_totals = df_nutrient_totals[df_nutrient_totals['TotalCalories'] > 0].reset_index(drop=True)
 
-# Save the nutrient percentage data to a CSV file
-output_nutrient_path = os.path.join('..', 'data', 'auxillary', 'nutrient_percentage_by_gender_age.csv')
-df_nutrient_percentage.to_csv(output_nutrient_path, index=False)
 
-print(f"Nutrient percentage by gender and age group has been exported to {output_nutrient_path}")
+# %%
+# examine the data in df_nutrient_totals
+print(df_nutrient_totals.head())
+
+#Check the total calories by age 
+total_calories_age = df_nutrient_totals.groupby('AgeGroup')[['TotalCalories', 'TotalFat','TotalCarbohydrates']].sum()
+total_calories_age
+
+#%%
+def plot_stacked_bar(metric, ylabel, color_dict):
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Pivot the data for the stacked bar chart
+    pivot_data = df_nutrient_totals.pivot_table(index=['Gender', 'AgeGroup'], columns='FoodCategory', values=metric, aggfunc='sum', fill_value=0)
+
+    # Use the color dictionary to map colors to food categories
+    colors = [color_dict.get(col, '#333333') for col in pivot_data.columns]  # Default color if category is missing
+
+    # Plot the stacked bar chart
+    pivot_data.plot(kind='bar', stacked=True, ax=ax, color=colors)
+
+    # Set titles and labels
+    ax.set_title(f'{ylabel} Contribution by Food Categories for Different Age Groups and Genders')
+    ax.set_xlabel('Gender and Age Group')
+    ax.set_ylabel(ylabel)
+    plt.xticks(rotation=45)
+    plt.legend(title='Food Category', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Adjust layout and show plot
+    plt.tight_layout()
+    plt.show()
+
+# Example usage:
+# Plot for TotalCalories
+plot_stacked_bar('TotalCalories', 'Total Calories (kcal)', food_group_colors)
+
+# Plot for TotalProtein
+plot_stacked_bar('TotalProtein', 'Total Protein (g)', food_group_colors)
+
+# Plot for TotalFat
+plot_stacked_bar('TotalFat', 'Total Fat (g)', food_group_colors)
+
+# Plot for TotalCarbohydrates
+plot_stacked_bar('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors)
