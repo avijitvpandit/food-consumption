@@ -316,6 +316,9 @@ print(f"Average consumption by gender and age group has been exported to {output
 # Import the food composition data from the auxillary folder
 food_composition_path = os.path.join('..', 'data', 'auxillary', 'food_composition.xlsx')
 df_food_composition = pd.read_excel(food_composition_path)
+#Rename the index column to Categories
+df_food_composition.rename(columns={'Main Category': 'Categories'}, inplace=True)
+
 # Calculate the percentage of dry matter, fat, protein, and carbohydrates for age, gender and food category
 average_consumption_gender_age_long['TotalDryMatter'] = (
     average_consumption_gender_age_long['Average amount consumed (g)'] *
@@ -365,38 +368,66 @@ total_calories_age = df_nutrient_totals.groupby('AgeGroup')[['TotalCalories', 'T
 total_calories_age
 
 #%%
-def plot_stacked_bar(metric, ylabel, color_dict):
-    fig, ax = plt.subplots(figsize=(12, 6))
+# Function to plot population pyramid for a given nutrient metric
+import matplotlib.pyplot as plt
+import pandas as pd
+import matplotlib.pyplot as plt
+import pandas as pd
 
-    # Pivot the data for the stacked bar chart
-    pivot_data = df_nutrient_totals.pivot_table(index=['Gender', 'AgeGroup'], columns='FoodCategory', values=metric, aggfunc='sum', fill_value=0)
+# Function to plot population pyramid for a given nutrient metric
+def plot_population_pyramid(metric, ylabel, color_dict):
+    age_groups = df_nutrient_totals['AgeGroup'].unique()
+    age_groups = sorted(age_groups)  # Ensure age groups are sorted
 
-    # Use the color dictionary to map colors to food categories
-    colors = [color_dict.get(col, '#333333') for col in pivot_data.columns]  # Default color if category is missing
+    # Pivot the data for population pyramid format
+    pivot_data = df_nutrient_totals.pivot_table(index=['AgeGroup', 'Gender'], columns='FoodCategory', values=metric, aggfunc='sum', fill_value=0)
 
-    # Plot the stacked bar chart
-    pivot_data.plot(kind='bar', stacked=True, ax=ax, color=colors)
+    # Increase the figure size to make the plot wider
+    fig, ax = plt.subplots(figsize=(14, 8))  # Adjust width for better visualization
 
-    # Set titles and labels
-    ax.set_title(f'{ylabel} Contribution by Food Categories for Different Age Groups and Genders')
-    ax.set_xlabel('Gender and Age Group')
-    ax.set_ylabel(ylabel)
-    plt.xticks(rotation=45)
-    plt.legend(title='Food Category', bbox_to_anchor=(1.05, 1), loc='upper left')
+    # Loop through the age groups and stack the food categories
+    for age_group in age_groups:
+        # Retrieve male and female data for the current age group
+        male_data = pivot_data.loc[(age_group, 'Male')] if (age_group, 'Male') in pivot_data.index else pd.Series(0, index=pivot_data.columns)
+        female_data = pivot_data.loc[(age_group, 'Female')] if (age_group, 'Female') in pivot_data.index else pd.Series(0, index=pivot_data.columns)
 
-    # Adjust layout and show plot
+        # Initialize cumulative values for stacked bars
+        female_cum_values = pd.Series(0, index=pivot_data.columns)
+        male_cum_values = pd.Series(0, index=pivot_data.columns)
+
+        # Plot female data on the left (negative side)
+        for food_category in pivot_data.columns:
+            ax.barh(age_group, -female_data[food_category], left=-female_cum_values[food_category], 
+                    color=color_dict.get(food_category, '#333333'), edgecolor='none')
+            female_cum_values += female_data[food_category]
+
+        # Plot male data on the right (positive side)
+        for food_category in pivot_data.columns:
+            ax.barh(age_group, male_data[food_category], left=male_cum_values[food_category], 
+                    color=color_dict.get(food_category, '#333333'), edgecolor='none')
+            male_cum_values += male_data[food_category]
+
+    # Set axis labels and title
+    ax.set_xlabel(ylabel)
+    ax.set_ylabel('Age Group')
+    ax.set_title(f'{ylabel} by Age Group and Gender')
+
+    # Add labels for "Male" and "Female"
+    ax.text(0.95, 1.02, 'Male', transform=ax.transAxes, fontsize=12, verticalalignment='center', horizontalalignment='center', color='blue')
+    ax.text(0.05, 1.02, 'Female', transform=ax.transAxes, fontsize=12, verticalalignment='center', horizontalalignment='center', color='red')
+
+    # Add color-coded legend outside the plot to avoid overlap
+    handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict[key]) for key in color_dict.keys()]
+    ax.legend(handles, color_dict.keys(), title='Food Groups', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Tighten the layout and adjust spacing between bars
+    plt.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)  # Adjust margins
     plt.tight_layout()
     plt.show()
 
-# Example usage:
-# Plot for TotalCalories
-plot_stacked_bar('TotalCalories', 'Total Calories (kcal)', food_group_colors)
+# Example usage: Plotting for TotalCalories, TotalProtein, TotalFat, and TotalCarbohydrates
+plot_population_pyramid('TotalCalories', 'Total Calories (kcal)', food_group_colors)
+plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors)
+plot_population_pyramid('TotalFat', 'Total Fat (g)', food_group_colors)
+plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors)
 
-# Plot for TotalProtein
-plot_stacked_bar('TotalProtein', 'Total Protein (g)', food_group_colors)
-
-# Plot for TotalFat
-plot_stacked_bar('TotalFat', 'Total Fat (g)', food_group_colors)
-
-# Plot for TotalCarbohydrates
-plot_stacked_bar('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors)
