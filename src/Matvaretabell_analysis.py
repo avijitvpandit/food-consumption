@@ -34,10 +34,10 @@ df_nutrient_totals = pd.merge(nutrients_selected, foods_selected, on='Matvare', 
 # Calculate percent dry matter
 df_nutrient_totals['Percent Dry Matter'] = 100 - df_nutrient_totals['Water (g)']
 
-# Rename Main Category to FoodCategory
+# Rename 'Main Category' to 'FoodCategory' for clarity
 df_nutrient_totals.rename(columns={'Main Category': 'FoodCategory'}, inplace=True)
 
-# Updated category mapping based on the new request
+# Updated category mapping
 category_mapping = {
     'Fruit and berries': 'Fruits and nuts',
     'Nuts and seeds': 'Fruits and nuts',
@@ -61,36 +61,45 @@ category_mapping = {
 def classify_meat(item, category):
     # If the category is "Red meat", we classify it based on keywords for poultry
     if category == 'Red meat':
-        item = item.lower()
-        if 'chicken' in item or 'poultry' in item or 'turkey' in item:
+        item_lower = item.lower()
+        if 'chicken' in item_lower or 'poultry' in item_lower or 'turkey' in item_lower or 'hen' in item_lower or 'duck' in item_lower:
             return 'Poultry'  # Reclassify as Poultry if these keywords are found
         else:
             return 'Red meat'  # Explicitly return 'Red meat' if no poultry keywords are found
     return category  # Otherwise, keep the category as-is
 
-# Applying the classification to the DataFrame
-df_nutrient_totals['Main Category'] = df_nutrient_totals.apply(
-    lambda row: classify_meat(row['FoodCategory'], category_mapping.get(row['FoodCategory'], row['FoodCategory'])),
+# Map 'FoodCategory' to new categories using 'category_mapping'
+df_nutrient_totals['Category'] = df_nutrient_totals['FoodCategory'].map(category_mapping)
+# If any 'FoodCategory' is not in 'category_mapping', keep the original
+df_nutrient_totals['Category'] = df_nutrient_totals['Category'].fillna(df_nutrient_totals['FoodCategory'])
+
+# Applying the classification to the DataFrame correctly
+df_nutrient_totals['Category'] = df_nutrient_totals.apply(
+    lambda row: classify_meat(row['Matvare'], row['Category']),
     axis=1
 )
 
 # Check if poultry is classified correctly
-print(df_nutrient_totals[df_nutrient_totals['Main Category'] == 'Poultry'].head())
+print("Sample of Poultry items:")
+print(df_nutrient_totals[df_nutrient_totals['Category'] == 'Poultry'][['Matvare', 'Category']].head())
 
-# Group the data by the new 'Main Category' and recalculate the average nutrient values
-category_averages_combined = df_nutrient_totals.groupby('Main Category').mean()
+print("Sample of Red meat items:")
+print(df_nutrient_totals[df_nutrient_totals['Category'] == 'Red meat'][['Matvare', 'Category']].head())
 
-# drop 01.332 as it is an outlier 
+# Group the data by the new 'Category' and recalculate the average nutrient values
+category_averages_combined = df_nutrient_totals.groupby('Category').mean()
+
+#'01.332' is an outlier:
 category_averages_combined.drop('01.332 ', inplace=True)
+#Rename Category to FoodCategory
+category_averages_combined.rename(index={'FoodCategory': 'Category'}, inplace=True)
 
-# Export the results to an Excel file (optional)
-output_path = 'updated_food_composition.xlsx'
+# Export the results to an Excel file
+output_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'auxillary', 'food_composition.xlsx')
 category_averages_combined.to_excel(output_path)
 
 # Print the unique categories to ensure Poultry and Red meat are correctly separated
-print("Unique categories after classification:", df_nutrient_totals['Main Category'].unique())
-
-
+print("Unique categories after classification:", df_nutrient_totals['Category'].unique())
 
 # Plotting the macros
 fig, ax = plt.subplots(2, 1, figsize=(12, 16))
@@ -100,7 +109,7 @@ nutrients = ['Protein (g)', 'Fat (g)', 'Carbohydrate (g)', 'Sugar, total (g)']
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']  # Blue, Orange, Green, Red
 category_averages_combined[nutrients].plot(kind='bar', ax=ax[0], color=colors)
 ax[0].set_title('Average Nutrient Content per Main Category')
-ax[0].set_xlabel('Main Category')
+ax[0].set_xlabel('')
 ax[0].set_ylabel('Average Content (g)/100g')
 ax[0].legend(title='Nutrients')
 ax[0].tick_params(axis='x', rotation=45)
@@ -108,13 +117,9 @@ ax[0].tick_params(axis='x', rotation=45)
 # Subplot 2: Kilocalories
 sns.barplot(x=category_averages_combined.index, y=category_averages_combined['Kilokalorier (kcal)'], ax=ax[1])
 ax[1].set_title('Average Kilocalories per Main Category')
-ax[1].set_xlabel('Main Category')
+ax[1].set_xlabel('')
 ax[1].set_ylabel('Average Kilocalories (kcal) per 100g')
 ax[1].tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
 plt.show()
-
-# Export the results to an Excel file
-output_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'auxillary', 'food_composition.xlsx')
-category_averages_combined.to_excel(output_path)

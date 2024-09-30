@@ -285,7 +285,7 @@ food_group_colors = {
     'Poultry': '#dc7633',
     'Eggs': '#f5cba7',
     'Fish': '#3498db',
-    'Condiments and sauces': '#eaecee',
+    'Fats and oils': '#eaecee',
     'Sweets and snacks': '#808b96',
     'Beverages': '#aab7b8',
     'Miscellaneous': '#34495e'
@@ -327,7 +327,7 @@ food_composition_path = os.path.join('..', 'data', 'auxillary', 'food_compositio
 df_food_composition = pd.read_excel(food_composition_path)
 
 # Rename the index column to 'FoodCategory' to match
-df_food_composition.rename(columns={'Main Category': 'FoodCategory'}, inplace=True)
+df_food_composition.rename(columns={'Category': 'FoodCategory'}, inplace=True)
 
 # merge average_consumption_gender_age_long with df_food_composition
 # Merge average_consumption_gender_age_long with df_food_composition
@@ -387,6 +387,23 @@ df_nutrient_totals = df_nutrient_totals[df_nutrient_totals['TotalCalories'] > 0]
 #%% Function to plot population pyramid for a given nutrient metric
 # Function to plot population pyramid for a given nutrient metric
 def plot_population_pyramid(metric, ylabel, color_dict):
+    # Define the categories in the desired order
+    desired_order = [
+        'Fruits and nuts',
+        'Vegetables',
+        'Starchy vegetables',
+        'Grains and cereals',
+        'Legumes',
+        'Dairy and alternatives',
+        'Eggs',
+        'Poultry',
+        'Red meat',
+        'Fish',
+        'Fats and oils',
+        'Sweets and snacks',
+        'Miscellaneous'
+    ]
+    
     # Pivot the data for population pyramid format
     pivot_data = df_nutrient_totals.pivot_table(
         index=['AgeGroup', 'Gender'],
@@ -395,6 +412,14 @@ def plot_population_pyramid(metric, ylabel, color_dict):
         aggfunc='sum',
         fill_value=0
     )
+    
+    # Ensure all desired categories are present in pivot_data
+    for category in desired_order:
+        if category not in pivot_data.columns:
+            pivot_data[category] = 0  # Add missing category with zeros
+
+    # Reorder the columns of pivot_data to match desired_order
+    pivot_data = pivot_data[desired_order]
 
     # Sort the AgeGroup index
     pivot_data = pivot_data.sort_index(level='AgeGroup')
@@ -404,7 +429,7 @@ def plot_population_pyramid(metric, ylabel, color_dict):
 
     # Prepare data for plotting
     age_groups = sorted(df_nutrient_totals['AgeGroup'].unique())
-    categories = pivot_data.columns.tolist()
+    categories = desired_order  # Use desired order
 
     for age_group in age_groups:
         for gender in ['Male', 'Female']:
@@ -455,11 +480,14 @@ def plot_population_pyramid(metric, ylabel, color_dict):
         bbox_to_anchor=(1.05, 1),
         loc='upper left'
     )
-
+   
     # Adjust x-axis limits to center the plot
     max_value = pivot_data.sum(axis=1).max()
-    ax.set_xlim(-max_value*1.05, max_value*1.05)
-
+    ax.set_xlim(-max_value * 1.05, max_value * 1.05)
+    #Add 'male' and 'female' labels
+    # Add 'Male' and 'Female' labels close to the heading
+    ax.text(max_value*0.8, len(age_groups), 'Male', ha='center', va='center', fontsize=12, color='blue')
+    ax.text(-max_value*0.8, len(age_groups), 'Female', ha='center', va='center', fontsize=12, color='Red')
     # Add a vertical line at x=0 for separation
     ax.axvline(0, color='black', linewidth=0.5)
 
@@ -473,15 +501,3 @@ plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors)
 plot_population_pyramid('TotalFat', 'Total Fat (g)', food_group_colors)
 plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors)
 
-#%%
-#mismatch in aggregation of food consumption data
-
-#checking the data for the first id
-df = df_food_groups.iloc[0]
-
-#Print the whole data
-with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-    print(df)
-
-#check the highest number in the data
-df.max()
