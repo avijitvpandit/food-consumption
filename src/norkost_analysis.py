@@ -61,7 +61,8 @@ df_energy = df_energy.drop(1)  # Drop the second row (if necessary)
 df_energy.reset_index(drop=True, inplace=True)  # Reset the index
 df_energy['Energy'] = pd.to_numeric(df_energy['Energy'], errors='coerce') / 4.184  # Convert KJ to Kcal
 
-#%% Energy analysis
+#%% 
+# Energy analysis
 # Merge df_background and df_energy
 df_energy_m = pd.merge(df_energy, df_background, on='ID')
 
@@ -74,6 +75,27 @@ std_energy_male = df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'].std()
 mean_energy_female = df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'].mean()
 std_energy_female = df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'].std()
 
+# Create 10-year age groups
+df_energy_m['AgeGroup'] = pd.cut(
+    df_energy_m['Age'],
+    bins=range(0, 101, 10),
+    right=False,
+    labels=[f'{i}-{i+9}' for i in range(0, 100, 10)]
+)
+
+# Create df_energy_long by age groups and gender
+df_energy_long = df_energy_m.groupby(['Gender', 'AgeGroup']).agg({
+    'Energy': 'mean'
+}).reset_index()
+
+# Rename the 'Energy' column to 'AverageEnergyIntake'
+df_energy_long.rename(columns={'Energy': 'AverageEnergyIntake'}, inplace=True)
+
+#Drop the NaN values in the 'AverageEnergyIntake' column
+df_energy_long = df_energy_long.dropna(subset=['AverageEnergyIntake'])
+
+#%%
+# Energy analysis
 # Plot energy distribution by mean energy intake for each gender
 plt.figure(figsize=(10, 6))
 sns.histplot(df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'], kde=True, color='blue', label='Male')
@@ -89,14 +111,6 @@ plt.xlabel('Energy Intake (Kcal) per day')
 plt.ylabel('Frequency')
 plt.legend()
 plt.show()
-
-#%% Create 10-year age groups
-df_energy_m['AgeGroup'] = pd.cut(
-    df_energy_m['Age'],
-    bins=range(0, 101, 10),
-    right=False,
-    labels=[f'{i}-{i+9}' for i in range(0, 100, 10)]
-)
 
 # Plot energy intake by age group and gender
 plt.figure(figsize=(14, 8))
@@ -316,11 +330,6 @@ average_consumption_gender_age_long = average_consumption_gender_age.melt(
 # Fill NaN values with 0
 average_consumption_gender_age_long['Average amount consumed (g)'].fillna(0, inplace=True)
 
-# Save the table to a CSV file
-output_path = os.path.join('..', 'data', 'auxillary', 'average_consumption_by_gender_age.csv')
-average_consumption_gender_age_long.to_csv(output_path, index=False)
-
-print(f"Average consumption by gender and age group has been exported to {output_path}")
 
 #%% Import the food composition data
 food_composition_path = os.path.join('..', 'data', 'auxillary', 'food_composition.xlsx')
@@ -372,20 +381,54 @@ average_consumption_gender_age_long['TotalCalories'] = (
     average_consumption_gender_age_long['Kilokalorier (kcal)'] / 100
 )
 
-#%% Group by Gender, AgeGroup, and FoodCategory to calculate the total amount of each nutrient
+# Total phosphorus calculation
+average_consumption_gender_age_long['TotalPhosphorus'] = (
+    average_consumption_gender_age_long['Average amount consumed (g)'] *
+    average_consumption_gender_age_long['Phosphorus (P) (mg)'] / 100
+)
+
+# Drop the colums that are not needed
+average_consumption_gender_age_long.drop(columns=[
+    'Percent Dry Matter', 'Fat (g)', 'Protein (g)', 'Carbohydrate (g)', 'Kilokalorier (kcal)', 'Phosphorus (P) (mg)'
+], inplace=True)
+
+# Merge df_energy_long with average_consumption_gender_age_long
+average_consumption_gender_age_long = pd.merge(
+    average_consumption_gender_age_long,
+    df_energy_long,
+    on=['Gender', 'AgeGroup'],
+    how='left'
+)
+
+#%% 
+#Group by Gender, AgeGroup, and FoodCategory to calculate the total amount of each nutrient
 df_nutrient_totals = average_consumption_gender_age_long.groupby(['Gender', 'AgeGroup', 'FoodCategory']).agg({
     'TotalDryMatter': 'sum',
     'TotalFat': 'sum',
     'TotalProtein': 'sum',
     'TotalCarbohydrates': 'sum',
-    'TotalCalories': 'sum'
+    'TotalCalories': 'sum',
+    'TotalPhosphorus': 'sum'
 }).reset_index()
 
 # Drop rows where TotalCalories is 0
 df_nutrient_totals = df_nutrient_totals[df_nutrient_totals['TotalCalories'] > 0].reset_index(drop=True)
 
-#%% Function to plot population pyramid for a given nutrient metric
-# Function to plot population pyramid for a given nutrient metric
+# Merge df_nutrient_totals with df_energy_long 
+df_nutrient_totals = pd.merge(
+    df_nutrient_totals,
+    df_energy_long,
+    on=['Gender', 'AgeGroup'],
+    how='left'
+)
+
+# Export the df_nutrient_totals to an Excel file in auxillary folder
+output_path = os.path.join('..', 'data', 'auxillary', 'Average consumption by age and gender.xlsx')
+df_nutrient_totals.to_excel(output_path, index=False)
+print(f"Average consumption by gender and age group has been exported to {output_path}")
+
+#%% 
+# Plot population pyramid for a given nutrient metric
 def plot_population_pyramid(metric, ylabel, color_dict):
     # Define the categories in the desired order
     desired_order = [
