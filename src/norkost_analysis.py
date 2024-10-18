@@ -317,6 +317,22 @@ plt.legend(title='Food Category', bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
 plt.show()
 
+# Calculate average consumption by education
+average_consumption_education = df_food.groupby('Education')[categories].mean().T
+
+# Drop the columns with NaN values (if any)
+average_consumption_education.dropna(axis=1, inplace=True)
+
+# Plot average consumption by education
+# Plot average consumption by education as a stacked barh chart
+average_consumption_education.T.plot(kind='barh', stacked=True, figsize=(14, 8), color=colors)
+plt.title('Average Consumption by Food Category and Education')
+plt.xlabel('Average Amount Consumed (g)')
+plt.ylabel('Education Level')
+plt.legend(title='', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
 #%% Export a table with average consumption by gender, age group, and food category
 average_consumption_gender_age = df_food.groupby(['Gender', 'AgeGroup'])[categories].mean().reset_index()
 
@@ -408,7 +424,8 @@ df_nutrient_totals = average_consumption_gender_age_long.groupby(['Gender', 'Age
     'TotalProtein': 'sum',
     'TotalCarbohydrates': 'sum',
     'TotalCalories': 'sum',
-    'TotalPhosphorus': 'sum'
+    'TotalPhosphorus': 'sum',
+    'Average amount consumed (g)': 'sum'
 }).reset_index()
 
 # Drop rows where TotalCalories is 0
@@ -423,7 +440,7 @@ df_nutrient_totals = pd.merge(
 )
 
 # Export the df_nutrient_totals to an Excel file in auxillary folder
-output_path = os.path.join('..', 'data', 'auxillary', 'Average consumption by age and gender.xlsx')
+output_path = os.path.join('..', 'data', 'auxillary', 'average consumption.xlsx')
 df_nutrient_totals.to_excel(output_path, index=False)
 print(f"Average consumption by gender and age group has been exported to {output_path}")
 

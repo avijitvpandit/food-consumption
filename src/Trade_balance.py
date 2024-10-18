@@ -56,6 +56,8 @@ years = ['2019', '2020', '2021', '2022', '2023']
 trade_df_avg = trade_df_grouped.copy()
 trade_df_avg['Average'] = trade_df_avg[years].mean(axis=1)
 
+#Export the trade_df_avg to a new Excel file in auxillary
+file_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'auxillary', 'Trade_balance.xlsx')
 # Separate into Imports and Exports DataFrames with average
 imports_df_avg = trade_df_avg[trade_df_avg['Type'] == 'Imports'].set_index('Food Category')
 exports_df_avg = trade_df_avg[trade_df_avg['Type'] == 'Exports'].set_index('Food Category')
