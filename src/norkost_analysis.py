@@ -5,7 +5,7 @@ import numpy as np
 import seaborn as sns
 import os
 
-#%% Load and clean the data
+#%% Load and clean the data for NORKOST 3
 path = os.path.join('..', 'data', 'raw', 'norkost')
 file_name = 'Norkost 3-data til NTNU.xlsx'
 file_path = os.path.join(path, file_name)
@@ -561,3 +561,90 @@ plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors)
 plot_population_pyramid('TotalFat', 'Total Fat (g)', food_group_colors)
 plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors)
 
+#%%
+# importing the Norkost 2 data 
+path = os.path.join('..', 'data', 'raw', 'norkost')
+file_name = 'Norkost 2.xlsx'
+file_path = os.path.join(path, file_name)
+df_norkost2 = pd.read_excel(file_path)
+# Cleaning the data
+
+#rename the row with age group 16-19 as 10 -19 
+df_norkost2.loc[df_norkost2['Age group'] == '16-19', 'Age group'] = '10-19'
+# Convert energy to Kcal
+df_norkost2['Energy intake (MJ/day)'] = df_norkost2['Energy intake (MJ/day)']*1000 / 4.184
+#rename the column Energy intake (MJ/day) to Energy (kcal/day)
+df_norkost2.rename(columns={'Energy intake (MJ/day)': 'Energy (kcal/day)'}, inplace=True)
+#%%
+# Plot energy distribution for Norkost 2 and compare with Norkost 3 in separate subplots for Male and Female
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 8), sharey=True)
+
+# Set the width of the bars
+bar_width = 0.35
+
+# Set positions of the bars on the x-axis for Norkost 3 and Norkost 2 for Male
+r1 = np.arange(len(norkost3_male['AgeGroup']))
+r2 = [x + bar_width for x in r1]
+
+# Male subplot
+axes[0].bar(r1, norkost3_male['AverageEnergyIntake'], color='blue', width=bar_width, edgecolor='grey', label='Norkost 3')
+axes[0].bar(r2, norkost2_male['Energy (kcal/day)'], color='blue', width=bar_width, edgecolor='grey', hatch='//', label='Norkost 2')
+axes[0].set_title('Male')
+axes[0].set_xlabel('Age Group', fontweight='bold')
+axes[0].set_xticks([r + bar_width/2 for r in range(len(norkost3_male['AgeGroup']))])
+axes[0].set_xticklabels(norkost3_male['AgeGroup'])
+axes[0].set_ylabel('Average Energy Intake (Kcal) per day')
+axes[0].legend(title='Survey')
+
+# Set positions of the bars on the x-axis for Norkost 3 and Norkost 2 for Female
+r3 = np.arange(len(norkost3_female['AgeGroup']))
+r4 = [x + bar_width for x in r3]
+
+# Female subplot
+axes[1].bar(r3, norkost3_female['AverageEnergyIntake'], color='pink', width=bar_width, edgecolor='grey', label='Norkost 3')
+axes[1].bar(r4, norkost2_female['Energy (kcal/day)'], color='pink', width=bar_width, edgecolor='grey', hatch='//', label='Norkost 2')
+axes[1].set_title('Female')
+axes[1].set_xlabel('Age Group', fontweight='bold')
+axes[1].set_xticks([r + bar_width/2 for r in range(len(norkost3_female['AgeGroup']))])
+axes[1].set_xticklabels(norkost3_female['AgeGroup'])
+axes[1].legend(title='Survey')
+
+# Set a common title for the figure
+fig.suptitle('Energy Intake by Age Group and Gender (Norkost 2 vs Norkost 3)')
+plt.tight_layout()
+plt.show()
+
+# %%
+#dict to organize the food categories
+category_columns = {
+    'Fruits and berries': ['Fruits and berries'],
+    'Vegetables': ['Vegetables'],
+    'Starchy vegetables': ['Potatoes'],
+    'Grains and cereals': ['Cereals and cereal products'],
+    'Legumes': ['Rice, pasta and noodles'],
+    'Dairy and alternatives': ['Bread'],
+    'Eggs': ['Other grain products'],
+    'Fats and oils': ['Fish and fish products'],
+    'Sweets and snacks': ['Meat and meat products'],
+    'Milk and milk products': ['Milk and milk products'],
+    'Cheese': ['Cheese'],
+    'Eggs': ['Eggs'],
+    'Fats and oils': ['Fats and oils'],
+    'Sugar and sweets': ['Sugar and sweets'],
+    'Miscellaneous': ['Miscellaneous']
+}
+ desired_order = [
+        'Fruits and nuts',
+        'Vegetables',
+        'Starchy vegetables',
+        'Grains and cereals',
+        'Legumes',
+        'Dairy and alternatives',
+        'Eggs',
+        'Poultry',
+        'Red meat',
+        'Fish',
+        'Fats and oils',
+        'Sweets and snacks',
+        'Miscellaneous'
+    ]
