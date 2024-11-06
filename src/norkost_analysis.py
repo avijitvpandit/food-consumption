@@ -561,3 +561,20 @@ plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors)
 plot_population_pyramid('TotalFat', 'Total Fat (g)', food_group_colors)
 plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors)
 
+#%%
+#data analysis for vegetarians
+# Identify vegetarians based on df_nutrient_totals
+# Define the food categories that are considered non-vegetarian
+non_vegetarian_categories = [
+    'Red meat', 'Poultry', 'Fish',
+]
+
+# Identify vegetarians based on the absence of non-vegetarian food categories
+df_vegetarians = df_food[df_food[non_vegetarian_categories].sum(axis=1) == 0]
+
+# Print the number of vegetarians 
+num_vegetarians = len(df_vegetarians)
+print(f"Number of vegetarians: {num_vegetarians}")
+
+#%%
+
