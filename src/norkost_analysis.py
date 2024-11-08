@@ -645,38 +645,4 @@ fig.suptitle('Energy Intake by Age Group and Gender (Norkost 2 vs Norkost 3)')
 plt.tight_layout()
 plt.show()
 
-# %% Ploting changes in macronutrient intake between Norkost 2 and Norkost 3
-#dict to organize the food categories
-category_columns = {
-    'Fruits and berries': ['Fruits and juice (g/day)'],
-    'Vegetables': ['Vegetables (g/day)'],
-    'Starchy vegetables': ['Potatoes (g/day)'],
-    'Grains and cereals': ['Bread and cereals (g/day)'],
-    'Legumes': [],
-    'Dairy and alternatives': ['Milk and dairy products (g/day)'],
-    'Eggs': ['Eggs (g/day)'],
-    'Fats and oils': [''],
-    'Sweets and snacks': ['Meat and meat products'],
-    'Milk and milk products': ['Milk and milk products'],
-    'Cheese': ['Cheese'],
-    'Eggs': ['Eggs'],
-    'Fats and oils': ['Fats and oils'],
-    'Sugar and sweets': ['Sugar and sweets'],
-    'Miscellaneous': ['Miscellaneous']
-}
- desired_order = [
-        'Fruits and nuts',
-        'Vegetables',
-        'Starchy vegetables',
-        'Grains and cereals',
-        'Legumes',
-        'Dairy and alternatives',
-        'Eggs',
-        'Poultry',
-        'Red meat',
-        'Fish',
-        'Fats and oils',
-        'Sweets and snacks',
-        'Miscellaneous'
-    ]
 
