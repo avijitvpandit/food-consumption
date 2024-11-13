@@ -192,11 +192,6 @@ df_long['Category'] = df_long['FoodGroup'].map(reverse_food_group_mapping)
 unmapped_codes = df_long[df_long['Category'].isnull()]['FoodGroup'].unique()
 if len(unmapped_codes) > 0:
     print(f"Unmapped food group codes: {unmapped_codes}")
-    # Optionally, assign unmapped codes to 'Miscellaneous' or another appropriate category
-    # For example:
-    # df_long.loc[df_long['Category'].isnull(), 'Category'] = 'Miscellaneous'
-    # And update the mapping
-    # food_group_mapping['Miscellaneous'].extend(unmapped_codes.tolist())
 else:
     print("All food group codes are mapped successfully.")
 
@@ -446,7 +441,7 @@ print(f"Average consumption by gender and age group has been exported to {output
 
 #%% 
 # Plot population pyramid for a given nutrient metric
-def plot_population_pyramid(metric, ylabel, color_dict):
+def plot_population_pyramid(metric, ylabel, color_dict, NorkostVersion):
     # Define the categories in the desired order
     desired_order = [
         'Fruits and nuts',
@@ -464,8 +459,17 @@ def plot_population_pyramid(metric, ylabel, color_dict):
         'Miscellaneous'
     ]
     
+    # Use the appropriate dataset based on NorkostVersion
+    if NorkostVersion == 'Norkost 2':
+        df = df_nutrient_totals_nk2  # Make sure df_nutrient_totals_nk2 is defined
+    elif NorkostVersion == 'Norkost 3':
+        df = df_nutrient_totals
+    else:
+        print("Invalid NorkostVersion. Please specify 'Norkost 2' or 'Norkost 3'.")
+        return
+    
     # Pivot the data for population pyramid format
-    pivot_data = df_nutrient_totals.pivot_table(
+    pivot_data = df.pivot_table(
         index=['AgeGroup', 'Gender'],
         columns='FoodCategory',
         values=metric,
@@ -488,7 +492,7 @@ def plot_population_pyramid(metric, ylabel, color_dict):
     fig, ax = plt.subplots(figsize=(14, 10))
 
     # Prepare data for plotting
-    age_groups = sorted(df_nutrient_totals['AgeGroup'].unique())
+    age_groups = sorted(df['AgeGroup'].unique())
     categories = desired_order  # Use desired order
 
     for age_group in age_groups:
@@ -528,7 +532,7 @@ def plot_population_pyramid(metric, ylabel, color_dict):
     # Set labels and title
     ax.set_xlabel(ylabel)
     ax.set_ylabel('Age Group')
-    ax.set_title(f'{ylabel} by Age Group and Gender')
+    ax.set_title(f'{ylabel} per capita by Age Group and Gender ({NorkostVersion})')
 
     # Add legend for food categories
     handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict.get(category, '#333333')) for category in categories]
@@ -544,10 +548,9 @@ def plot_population_pyramid(metric, ylabel, color_dict):
     # Adjust x-axis limits to center the plot
     max_value = pivot_data.sum(axis=1).max()
     ax.set_xlim(-max_value * 1.05, max_value * 1.05)
-    #Add 'male' and 'female' labels
-    # Add 'Male' and 'Female' labels close to the heading
-    ax.text(max_value*0.8, len(age_groups), 'Male', ha='center', va='center', fontsize=12, color='blue')
-    ax.text(-max_value*0.8, len(age_groups), 'Female', ha='center', va='center', fontsize=12, color='Red')
+    # Add 'Male' and 'Female' labels
+    ax.text(max_value * 0.8, len(age_groups), 'Male', ha='center', va='center', fontsize=12, color='blue')
+    ax.text(-max_value * 0.8, len(age_groups), 'Female', ha='center', va='center', fontsize=12, color='red')
     # Add a vertical line at x=0 for separation
     ax.axvline(0, color='black', linewidth=0.5)
 
@@ -556,10 +559,10 @@ def plot_population_pyramid(metric, ylabel, color_dict):
 
 
 #Plotting for TotalCalories, TotalProtein, TotalFat, and TotalCarbohydrates
-plot_population_pyramid('TotalCalories', 'Total Calories (kcal)', food_group_colors)
-plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors)
-plot_population_pyramid('TotalFat', 'Total Fat (g)', food_group_colors)
-plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors)
+plot_population_pyramid('TotalCalories', 'Total Calories (kcal)', food_group_colors,'Norkost 3')
+plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors,'Norkost 3')
+plot_population_pyramid('TotalFat', 'Total Fat (g)', food_group_colors,'Norkost 3')
+plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors,'Norkost 3')
 
 #%%
 #data analysis for vegetarians
@@ -645,4 +648,76 @@ fig.suptitle('Energy Intake by Age Group and Gender (Norkost 2 vs Norkost 3)')
 plt.tight_layout()
 plt.show()
 
+#%% Norkost 2 vs 3 food products comparison
+#Visualize a population pyramid for Norkost 2 and compare with Norkost 3
+#See the Norkkos 2 data
+df_norkost2.head()
+# Identify the columns in df_norkost2 that correspond to food categories
+food_categories = df_food_composition['FoodCategory'].unique()
+norkost2_categories = [col for col in df_norkost2.columns if col in food_categories]
 
+# Reshape df_norkost2 to long format
+df_norkost2_long = df_norkost2.melt(
+    id_vars=['Age group', 'Gender'],
+    value_vars=norkost2_categories,
+    var_name='FoodCategory',
+    value_name='Average amount consumed (g)'
+)
+
+#Rename Age group to AgeGroup
+df_norkost2_long.rename(columns={'Age group': 'AgeGroup'}, inplace=True)
+
+# Merge with food composition data
+df_norkost2_long = pd.merge(
+    df_norkost2_long,
+    df_food_composition,
+    on='FoodCategory',
+    how='left'
+)
+
+# Calculate nutrient totals
+df_norkost2_long['TotalCalories'] = (
+    df_norkost2_long['Average amount consumed (g)'] *
+    df_norkost2_long['Kilokalorier (kcal)'] / 100
+)
+df_norkost2_long['TotalDryMatter'] = (
+    df_norkost2_long['Average amount consumed (g)'] *
+    df_norkost2_long['Percent Dry Matter'] / 100
+)
+df_norkost2_long['TotalFat'] = (
+    df_norkost2_long['Average amount consumed (g)'] *
+    df_norkost2_long['Fat (g)'] / 100
+)
+df_norkost2_long['TotalProtein'] = (
+    df_norkost2_long['Average amount consumed (g)'] *
+    df_norkost2_long['Protein (g)'] / 100
+)
+df_norkost2_long['TotalCarbohydrates'] = (
+    df_norkost2_long['Average amount consumed (g)'] *
+    df_norkost2_long['Carbohydrate (g)'] / 100
+)
+
+#Group by Gender, AgeGroup, and FoodCategory to calculate the total amount of each nutrient
+df_nutrient_totals_nk2 = df_norkost2_long.groupby(['Gender', 'AgeGroup', 'FoodCategory']).agg({
+    'TotalDryMatter': 'sum',
+    'TotalFat': 'sum',
+    'TotalProtein': 'sum',
+    'TotalCarbohydrates': 'sum',
+    'TotalCalories': 'sum',
+    'Average amount consumed (g)': 'sum'
+}).reset_index()
+
+#using plot population pyramid function to plot the population pyramid for Norkost 2
+plot_population_pyramid('TotalCalories', 'Total Calories (kcal)', food_group_colors, 'Norkost 2')
+plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors, 'Norkost 2')
+plot_population_pyramid('TotalFat', 'Total Fat (g)',  food_group_colors, 'Norkost 2')
+plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors, 'Norkost 2')
+
+#%%
+#TODO multiply with the total population to get the total energy intake for one year for NK2 and NK3 
+#TODO include the total food intake for the years from Helsedirektoratet
+#TODO export the right files to the right folders
+
+
+# %%
+#
