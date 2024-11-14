@@ -435,7 +435,7 @@ df_nutrient_totals = pd.merge(
 )
 
 # Export the df_nutrient_totals to an Excel file in auxillary folder
-output_path = os.path.join('..', 'data', 'auxillary', 'average consumption.xlsx')
+output_path = os.path.join('..', 'data', 'auxillary', 'average percapita consumption_nk3.xlsx')
 df_nutrient_totals.to_excel(output_path, index=False)
 print(f"Average consumption by gender and age group has been exported to {output_path}")
 
@@ -656,9 +656,12 @@ df_norkost2.head()
 food_categories = df_food_composition['FoodCategory'].unique()
 norkost2_categories = [col for col in df_norkost2.columns if col in food_categories]
 
+# Rename 'Energy (kcal/day)' to 'AverageEnergyIntake'
+df_norkost2.rename(columns={'Energy (kcal/day)': 'AverageEnergyIntake'}, inplace=True)
+
 # Reshape df_norkost2 to long format
 df_norkost2_long = df_norkost2.melt(
-    id_vars=['Age group', 'Gender'],
+    id_vars=['Age group', 'Gender', 'AverageEnergyIntake'],
     value_vars=norkost2_categories,
     var_name='FoodCategory',
     value_name='Average amount consumed (g)'
@@ -704,7 +707,8 @@ df_nutrient_totals_nk2 = df_norkost2_long.groupby(['Gender', 'AgeGroup', 'FoodCa
     'TotalProtein': 'sum',
     'TotalCarbohydrates': 'sum',
     'TotalCalories': 'sum',
-    'Average amount consumed (g)': 'sum'
+    'Average amount consumed (g)': 'sum',
+    'AverageEnergyIntake': 'mean'
 }).reset_index()
 
 #using plot population pyramid function to plot the population pyramid for Norkost 2
@@ -714,9 +718,10 @@ plot_population_pyramid('TotalFat', 'Total Fat (g)',  food_group_colors, 'Norkos
 plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors, 'Norkost 2')
 
 #%%
-#TODO multiply with the total population to get the total energy intake for one year for NK2 and NK3 
-#TODO include the total food intake for the years from Helsedirektoratet
-#TODO export the right files to the right folders
+# Export the df_nutrient_totals to an Excel file in auxillary folder
+output_path = os.path.join('..', 'data', 'auxillary', 'average percapita consumption_nk2.xlsx')
+df_nutrient_totals_nk2.to_excel(output_path, index=False)
+print(f"Average consumption by gender and age group has been exported to {output_path}")
 
 
 # %%
