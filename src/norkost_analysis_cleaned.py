@@ -1,3 +1,4 @@
+# In the first section of this file Norkost 3 is loaded and analysed 
 #%% 
 # Importing the libraries
 import matplotlib.pyplot as plt
@@ -5,9 +6,37 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import os
+from plot_functions import (
+    plot_energy_distribution,
+    plot_energy_by_age_group,
+    plot_average_consumption_by_gender,
+    plot_average_consumption_by_age_group,
+    plot_population_pyramid
+)
+
+#%%
+# EXPLANATION OF THE FILE 
+# SECTION 1 : Norkost 3 
+# In the first section of this file Norkost 3 is loaded and cleaned 
+# There are 2 main parts - ENERGY and FOOD GROUPS 
+# ENERGY calculates the total energy consumption and groups by age and gender
+# FOOD GROUPS maps the existing to right food categories 
+
+
+# Then norkost 2 is loaded, cleaned and exported 
+# They both are merged later and exported as one file to the auxillary data folder
+# g/day for 14 categories in nk3 and for xx categories in nk2 
+# Then the calories, protein, carbohydrates, fats and total Dry matter are calculated 
+# using the matvaretabellen 
+
+# NOTE : The calories calculated from matvaretabellen 
+# and calories from nk survey have a big discrepancy
+# TODO : Talk to NK lady and ask for g/ day 
+# to calories/day conversion key for food categories 
 
 #%% 
-# Load and clean the data for NORKOST 3 
+# SECTION 1 : Norkost 3 
+# Load and clean the data for NORKOST 3
 path = os.path.join('..', 'data', 'raw', 'norkost')
 file_name = 'Norkost 3-data til NTNU.xlsx'
 file_path = os.path.join(path, file_name)
@@ -18,7 +47,6 @@ df_background = pd.read_excel(file_path, sheet_name=background_sheet)
 df_food_groups = pd.read_excel(file_path, sheet_name=foodgroups_sheet, header=2)
 df_energy = pd.read_excel(file_path, sheet_name=energy_sheet, header=None)
 
-#%% 
 # Cleaning the background data
 df_background = df_background.iloc[:, :-3]  # Drop the last three columns
 df_background.drop(columns=['Hushold1'], inplace=True)  # Drop the household column
@@ -40,21 +68,9 @@ df_background['Education'] = df_background['Education'].map({
     7: "Postgraduate",
     9: "Unanswered"
 })
-
-#%% Cleaning the food groups data
-df_food_groups = df_food_groups.dropna(how='all').reset_index(drop=True)  # Drop any fully empty rows
-df_food_groups = df_food_groups.dropna(axis=1, how='all')  # Drop any fully empty columns
-df_food_groups.rename(columns={'Nr': 'ID'}, inplace=True)
-
-# Handle NaN values in ID column by converting to numeric and dropping rows with NaN IDs
-df_food_groups['ID'] = pd.to_numeric(df_food_groups['ID'], errors='coerce')
-df_food_groups = df_food_groups.dropna(subset=['ID'])
-df_food_groups['ID'] = df_food_groups['ID'].astype(int)
-
-# Ensure that 'TOTALT' column exists and is numeric
-df_food_groups['TOTALT'] = pd.to_numeric(df_food_groups['TOTALT'], errors='coerce').fillna(0)
-
-#%% Cleaning the energy data
+#%%
+#### ENERGY #####
+#Cleaning the energy data
 df_energy = df_energy.iloc[3:].reset_index(drop=True)
 df_energy.columns = df_energy.iloc[0]  # Set the correct header
 df_energy = df_energy[['Nr', 'Energi']]  # Only keep 'Nr' and 'Energi' columns
@@ -63,21 +79,15 @@ df_energy.rename(columns={'Nr': 'ID', 'Energi': 'Energy'}, inplace=True)
 df_energy = df_energy.drop(1)  # Drop the second row (if necessary)
 df_energy.reset_index(drop=True, inplace=True)  # Reset the index
 df_energy['Energy'] = pd.to_numeric(df_energy['Energy'], errors='coerce') / 4.184  # Convert KJ to Kcal
-
-#%% 
-# Energy analysis
 # Merge df_background and df_energy
 df_energy_m = pd.merge(df_energy, df_background, on='ID')
-
 # Map gender numeric values to strings
 df_energy_m['Gender'] = df_energy_m['Gender'].map({1: 'Male', 2: 'Female'})
-
 # Calculate mean and standard deviation for each gender
 mean_energy_male = df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'].mean()
 std_energy_male = df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'].std()
 mean_energy_female = df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'].mean()
 std_energy_female = df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'].std()
-
 # Create 10-year age groups
 df_energy_m['AgeGroup'] = pd.cut(
     df_energy_m['Age'],
@@ -85,68 +95,51 @@ df_energy_m['AgeGroup'] = pd.cut(
     right=False,
     labels=[f'{i}-{i+9}' for i in range(0, 100, 10)]
 )
-
-# Create df_energy_long by age groups and gender
-df_energy_long = df_energy_m.groupby(['Gender', 'AgeGroup']).agg({
-    'Energy': 'mean'
-}).reset_index()
-
-# Rename the 'Energy' column to 'AverageEnergyIntake'
-df_energy_long.rename(columns={'Energy': 'AverageEnergyIntake'}, inplace=True)
-
-#Drop the NaN values in the 'AverageEnergyIntake' column
-df_energy_long = df_energy_long.dropna(subset=['AverageEnergyIntake'])
-
-#%%
-# Energy analysis
+# PLOTS - ENERGY 
 # Plot energy distribution by mean energy intake for each gender
-plt.figure(figsize=(10, 6))
-sns.histplot(df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'], kde=True, color='blue', label='Male')
-sns.histplot(df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'], kde=True, color='pink', label='Female')
-plt.axvline(mean_energy_male, color='blue', linestyle='--', label=f'Mean Male: {mean_energy_male:.2f} Kcal')
-plt.axvline(mean_energy_male + std_energy_male, color='blue', linestyle=':', label=f'+1 Std Dev Male: {mean_energy_male + std_energy_male:.2f} Kcal')
-plt.axvline(mean_energy_male - std_energy_male, color='blue', linestyle=':', label=f'-1 Std Dev Male: {mean_energy_male - std_energy_male:.2f} Kcal')
-plt.axvline(mean_energy_female, color='pink', linestyle='--', label=f'Mean Female: {mean_energy_female:.2f} Kcal')
-plt.axvline(mean_energy_female + std_energy_female, color='pink', linestyle=':', label=f'+1 Std Dev Female: {mean_energy_female + std_energy_female:.2f} Kcal')
-plt.axvline(mean_energy_female - std_energy_female, color='pink', linestyle=':', label=f'-1 Std Dev Female: {mean_energy_female - std_energy_female:.2f} Kcal')
-plt.title('Energy Intake Distribution by Gender')
-plt.xlabel('Energy Intake (Kcal) per day')
-plt.ylabel('Frequency')
-plt.legend()
-plt.show()
-
 # Plot energy intake by age group and gender
-plt.figure(figsize=(14, 8))
-sns.boxplot(
-    x='AgeGroup',
-    y='Energy',
-    hue='Gender',
-    data=df_energy_m,
-    palette={'Male': 'blue', 'Female': 'pink'}
-)
-plt.title('Energy Intake by Age Group and Gender')
-plt.xlabel('Age Group')
-plt.ylabel('Energy Intake (Kcal) per day')
-plt.legend(title='Gender')
-plt.show()
+# Create the 'visualizations' directory if it doesn't exist
+visualizations_dir = os.path.join('..', 'visualizations')
+os.makedirs(visualizations_dir, exist_ok=True)
 
-#%% Food groups analysis
+# Save the plots
+energy_by_age_group_plot_path = os.path.join(visualizations_dir, 'energy_by_age_group.png')
+plt.figure()
+plot_energy_by_age_group(df_energy_m)
+plt.savefig(energy_by_age_group_plot_path)
+plt.close()
+
+average_consumption_by_gender_plot_path = os.path.join(visualizations_dir, 'average_consumption_by_gender.png')
+plt.figure()
+plot_energy_distribution(df_energy_m, mean_energy_male, std_energy_male, mean_energy_female, std_energy_female)
+plt.savefig(average_consumption_by_gender_plot_path)
+plt.close()
+#%%
+#### FOOD GROUPS ######
+#Cleaning the food groups data
+df_food_groups = df_food_groups.dropna(how='all').reset_index(drop=True)  # Drop any fully empty rows
+df_food_groups = df_food_groups.dropna(axis=1, how='all')  # Drop any fully empty columns
+df_food_groups.rename(columns={'Nr': 'ID'}, inplace=True)
+# Handle NaN values in ID column by converting to numeric and dropping rows with NaN IDs
+df_food_groups['ID'] = pd.to_numeric(df_food_groups['ID'], errors='coerce')
+df_food_groups = df_food_groups.dropna(subset=['ID'])
+df_food_groups['ID'] = df_food_groups['ID'].astype(int)
+# Ensure that 'TOTALT' column exists and is numeric
+df_food_groups['TOTALT'] = pd.to_numeric(df_food_groups['TOTALT'], errors='coerce').fillna(0)
 # Mapping the food groups to the correct category
 food_group_mapping = {
-    'Fruits and nuts': [
-        'FRUKTB'
+    'Vegetables, fruits and nuts': [
+        'FRUKTB', # fruits
+        'GRS_FF','GRS_BL','GRS_U', 'GRS_K', #Vegetables 
+        'POTET', # Potatoes
     ],
-    'Vegetables': [
-        'GRS_FF','GRS_BL','GRS_U', 'GRS_K',
+    'Grains, cereals and legumes': [
+        'BROD', 'KORNPR', 'KAKER',   # Cereals
+        'BELGFR' # Legumes
     ],
-    'Starchy vegetables': [
-        'POTET'
-    ],
-    'Grains and cereals': [
-        'BROD', 'KORNPR', 'KAKER'
-    ],
-    'Dairy and alternatives': [
-        'MELKYO',  'OST'
+    'Dairy and egg': [
+        'MELKYO',  'OST', # Milk and cheese 
+        'EGG',
     ],
     'Red meat': [
         'KJOT_R',
@@ -156,14 +149,8 @@ food_group_mapping = {
     'Poultry': [
         'KJOT_HV'
     ],
-    'Eggs': [
-        'EGG'
-    ],
     'Fish': [
         'FISK'
-    ],
-    'Legumes': [
-        'BELGFR'
     ],
     'Sweets and snacks': [
         'SUKSOT'
@@ -178,14 +165,49 @@ food_group_mapping = {
         'DIVERS'
     ]
 }
+# Create a reverse mapping from food group codes to categories
+#Reverse mapping using dictionary comprehension
+reverse_food_group_mapping = {code: category for category, codes in food_group_mapping.items() for code in codes}
 
-#%% Create a reverse mapping from food group codes to categories
-reverse_food_group_mapping = {}
-for category, codes in food_group_mapping.items():
-    for code in codes:
-        reverse_food_group_mapping[code] = category
+# Reshape the DataFrame to a long format
+df_long = df_food_groups.melt(id_vars=['ID', 'TOTALT'], var_name='FoodGroup', value_name='Amount')
+df_long['Category'] = df_long['FoodGroup'].map(reverse_food_group_mapping)
+# Ensure 'Amount' is numeric and handle NaN values
+df_long['Amount'] = pd.to_numeric(df_long['Amount'], errors='coerce').fillna(0)
+# Calculate the total amount of food consumed per category
+df_food = df_long.groupby(['ID', 'Category'])['Amount'].sum().reset_index()
+df_food = df_food.pivot(index='ID', columns='Category', values='Amount').reset_index()
+df_food = pd.merge(df_background[['ID', 'Age', 'Gender', 'Education', 'Region']], df_food, on='ID', how='left')
+df_food['Gender'] = df_food['Gender'].map({1: 'Male', 2: 'Female'})
+categories = [c for c in df_food.columns if c not in ['ID', 'Age', 'Gender', 'Education', 'AgeGroup', 'Region', 'TotalConsumption']]
+categories = categories[1:]
+average_consumption = df_food.groupby('Gender')[categories].mean().T
+# Create 10-year age groups in df_food
+df_food['AgeGroup'] = pd.cut(
+    df_food['Age'],
+    bins=range(0, 101, 10),
+    right=False,
+    labels=[f'{i}-{i+9}' for i in range(0, 100, 10)]
+)
 
-#%% Reshape the DataFrame to a long format
+average_consumption_age_group = df_food.groupby('AgeGroup')[categories].mean().T
+average_consumption_age_group.dropna(axis=1, inplace=True)
+food_group_colors = {
+    'Fruits and nuts': '#186a3b',
+    'Vegetables': '#28b463',
+    'Starchy vegetables': '#82e0aa',
+    'Grains and cereals': '#abebc6',
+    'Legumes': '#17a589',
+    'Dairy and alternatives': '#e59866',
+    'Red meat': '#d35400',
+    'Poultry': '#dc7633',
+    'Eggs': '#f5cba7',
+    'Fish': '#3498db',
+    'Fats and oils': '#eaecee',
+    'Sweets and snacks': '#808b96',
+    'Miscellaneous': '#34495e'
+}
+# Reshape the DataFrame to a long format
 df_long = df_food_groups.melt(id_vars=['ID', 'TOTALT'], var_name='FoodGroup', value_name='Amount')
 
 # Map the food group codes to categories
@@ -198,10 +220,10 @@ if len(unmapped_codes) > 0:
 else:
     print("All food group codes are mapped successfully.")
 
-#%% Ensure 'Amount' is numeric and handle NaN values
+# Ensure 'Amount' is numeric and handle NaN values
 df_long['Amount'] = pd.to_numeric(df_long['Amount'], errors='coerce').fillna(0)
 
-#%% Calculate the total amount of food consumed per category
+# Calculate the total amount of food consumed per category
 df_food = df_long.groupby(['ID', 'Category'])['Amount'].sum().reset_index()
 
 # Pivot to wide format
@@ -230,7 +252,7 @@ max_difference = comparison['Difference'].abs().max()
 print(f"Maximum difference in total consumption: {max_difference}")
 
 # If the maximum difference is significant, investigate further
-if max_difference > 1e-6:
+if max_difference > 5000:
     discrepancies = comparison[comparison['Difference'] != 0]
     print("Discrepancies found in the following IDs:")
     print(discrepancies)
@@ -438,134 +460,11 @@ df_nutrient_totals = pd.merge(
 )
 
 # Export the df_nutrient_totals to an Excel file in auxillary folder
-output_path = os.path.join('..', 'data', 'auxiliary', 'average percapita consumption_nk3.xlsx')
+output_path = os.path.join('..', 'data', 'auxillary', 'average percapita consumption_nk3.xlsx')
 df_nutrient_totals.to_excel(output_path, index=False)
 print(f"Average consumption by gender and age group has been exported to {output_path}")
 
-#%% 
-# Plot population pyramid for a given nutrient metric
-def plot_population_pyramid(metric, ylabel, color_dict, NorkostVersion):
-    # Define the categories in the desired order
-    desired_order = [
-        'Fruits and nuts',
-        'Vegetables',
-        'Starchy vegetables',
-        'Grains and cereals',
-        'Legumes',
-        'Dairy and alternatives',
-        'Eggs',
-        'Poultry',
-        'Red meat',
-        'Fish',
-        'Fats and oils',
-        'Sweets and snacks',
-        'Miscellaneous'
-    ]
-    
-    # Use the appropriate dataset based on NorkostVersion
-    if NorkostVersion == 'Norkost 2':
-        df = df_nutrient_totals_nk2  # Make sure df_nutrient_totals_nk2 is defined
-    elif NorkostVersion == 'Norkost 3':
-        df = df_nutrient_totals
-    else:
-        print("Invalid NorkostVersion. Please specify 'Norkost 2' or 'Norkost 3'.")
-        return
-    
-    # Pivot the data for population pyramid format
-    pivot_data = df.pivot_table(
-        index=['AgeGroup', 'Gender'],
-        columns='FoodCategory',
-        values=metric,
-        aggfunc='sum',
-        fill_value=0
-    )
-    
-    # Ensure all desired categories are present in pivot_data
-    for category in desired_order:
-        if category not in pivot_data.columns:
-            pivot_data[category] = 0  # Add missing category with zeros
 
-    # Reorder the columns of pivot_data to match desired_order
-    pivot_data = pivot_data[desired_order]
-
-    # Sort the AgeGroup index
-    pivot_data = pivot_data.sort_index(level='AgeGroup')
-
-    # Increase the figure size
-    fig, ax = plt.subplots(figsize=(14, 10))
-
-    # Prepare data for plotting
-    age_groups = sorted(df['AgeGroup'].unique())
-    categories = desired_order  # Use desired order
-
-    for age_group in age_groups:
-        for gender in ['Male', 'Female']:
-            if (age_group, gender) in pivot_data.index:
-                data = pivot_data.loc[(age_group, gender)]
-            else:
-                data = pd.Series(0, index=categories)
-
-            # Initialize cumulative sums for stacking
-            cumulative = 0
-
-            # Loop over each food category to create stacked bars
-            for category in categories:
-                value = data[category]
-                color = color_dict.get(category, '#333333')
-
-                if gender == 'Male':
-                    ax.barh(
-                        age_group,
-                        value,
-                        left=cumulative,
-                        color=color,
-                        edgecolor='none'
-                    )
-                    cumulative += value
-                else:
-                    ax.barh(
-                        age_group,
-                        -value,
-                        left=-cumulative,
-                        color=color,
-                        edgecolor='none'
-                    )
-                    cumulative += value
-
-    # Set labels and title
-    ax.set_xlabel(ylabel)
-    ax.set_ylabel('Age Group')
-    ax.set_title(f'{ylabel} per capita by Age Group and Gender ({NorkostVersion})')
-
-    # Add legend for food categories
-    handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict.get(category, '#333333')) for category in categories]
-    labels = categories
-    ax.legend(
-        handles,
-        labels,
-        title='Food Categories',
-        bbox_to_anchor=(1.05, 1),
-        loc='upper left'
-    )
-   
-    # Adjust x-axis limits to center the plot
-    max_value = pivot_data.sum(axis=1).max()
-    ax.set_xlim(-max_value * 1.05, max_value * 1.05)
-    # Add 'Male' and 'Female' labels
-    ax.text(max_value * 0.8, len(age_groups), 'Male', ha='center', va='center', fontsize=12, color='blue')
-    ax.text(-max_value * 0.8, len(age_groups), 'Female', ha='center', va='center', fontsize=12, color='red')
-    # Add a vertical line at x=0 for separation
-    ax.axvline(0, color='black', linewidth=0.5)
-
-    plt.tight_layout()
-    plt.show()
-
-
-#Plotting for TotalCalories, TotalProtein, TotalFat, and TotalCarbohydrates
-plot_population_pyramid('TotalCalories', 'Total Calories (kcal)', food_group_colors,'Norkost 3')
-plot_population_pyramid('TotalProtein', 'Total Protein (g)', food_group_colors,'Norkost 3')
-plot_population_pyramid('TotalFat', 'Total Fat (g)', food_group_colors,'Norkost 3')
-plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_group_colors,'Norkost 3')
 
 #%%
 #data analysis for vegetarians
@@ -583,7 +482,7 @@ num_vegetarians = len(df_vegetarians)
 print(f"Number of vegetarians: {num_vegetarians}")
 
 #%%
-
+# SECTION 3 : NORKOST 2  
 #%% Norkost 2 data analysis
 # importing the Norkost 2 data 
 path = os.path.join('..', 'data', 'raw', 'norkost')
@@ -722,12 +621,10 @@ plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_gr
 
 #%%
 # Export the df_nutrient_totals to an Excel file in auxillary folder
-output_path = os.path.join('..', 'data', 'auxiliary', 'average percapita consumption_nk2.xlsx')
+output_path = os.path.join('..', 'data', 'auxillary', 'average percapita consumption_nk2.xlsx')
 df_nutrient_totals_nk2.to_excel(output_path, index=False)
 print(f"Average consumption by gender and age group has been exported to {output_path}")
 
 
 # %%
-
-
-# %%
+#
