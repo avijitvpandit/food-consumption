@@ -26,6 +26,8 @@ def plot_population_pyramid(df, age_group_col, gender_col, population_col, year_
     df_melted = df.melt(id_vars=[gender_col, age_group_col], var_name=year_col, value_name=population_col)
     
     years = df_melted[year_col].unique()
+    max_population = df_melted[population_col].max()  # Calculate the maximum population once
+
     for year in years:
         df_year = df_melted[df_melted[year_col] == year]
         df_pivot = df_year.pivot(index=age_group_col, columns=gender_col, values=population_col)
@@ -47,6 +49,7 @@ def plot_population_pyramid(df, age_group_col, gender_col, population_col, year_
         
         # Format x-axis labels to show absolute values
         ax.set_xticklabels([str(abs(int(x))) for x in ax.get_xticks()])
+        
         
         plt.tight_layout()
         plt.show()
@@ -80,45 +83,53 @@ df_nk3.dropna(subset=['AgeGroup'], inplace=True)
 
 # Standardize gender labels in df_pop, df_nk2, and df_nk3
 df_pop['Gender'] = df_pop['Gender'].replace({'male': 'Males', 'female': 'Females'})
-df_nk2['Gender'] = df_nk2['Gender'].replace({'male': 'Males', 'female': 'Females'})
-df_nk3['Gender'] = df_nk3['Gender'].replace({'male': 'Males', 'female': 'Females'})
+df_nk2['Gender'] = df_nk2['Gender'].replace({'Male': 'Males', 'Female': 'Females'})
+df_nk3['Gender'] = df_nk3['Gender'].replace({'Male': 'Males', 'Female': 'Females'})
 
 # Calculate consumption for each gender
 df_pop_nk2 = pd.DataFrame()
 df_pop_nk3 = pd.DataFrame()
 
 for gender in ['Males', 'Females']:
-    pop_gender = df_pop[df_pop['Gender'] == gender][['AgeGroup', 'Population', 'Gender']]
+    if '1994' not in df_pop.columns or '2014' not in df_pop.columns:
+        raise ValueError("Columns '1994' and '2014' must exist in df_pop")
+    pop_gender = df_pop[df_pop['Gender'] == gender][['AgeGroup', 'Gender', '1994', '2014']]
 
     # For NK2
     merged_nk2 = pop_gender.merge(df_nk2, on=['AgeGroup', 'Gender'])
-    food_columns_nk2 = df_nk2.columns.drop(['AgeGroup', 'Gender'])
+    food_columns_nk2 = df_nk2.columns.drop(['AgeGroup', 'Gender','FoodCategory'])
     for col in food_columns_nk2:
-        merged_nk2[col] = merged_nk2[col] * merged_nk2['Population']
+        merged_nk2[col] = merged_nk2[col] * merged_nk2['1994']
     df_pop_nk2 = pd.concat([df_pop_nk2, merged_nk2], ignore_index=True)
+    #drop columns 1994 and 2014 from df_pop_nk2
+    df_pop_nk2.drop(columns=['1994', '2014'], inplace=True)
 
     # For NK3
     merged_nk3 = pop_gender.merge(df_nk3, on=['AgeGroup', 'Gender'])
-    food_columns_nk3 = df_nk3.columns.drop(['AgeGroup', 'Gender'])
+    food_columns_nk3 = df_nk3.columns.drop(['AgeGroup', 'Gender','FoodCategory'])
     for col in food_columns_nk3:
-        merged_nk3[col] = merged_nk3[col] * merged_nk3['Population']
+        merged_nk3[col] = merged_nk3[col] * merged_nk3['2014']
     df_pop_nk3 = pd.concat([df_pop_nk3, merged_nk3], ignore_index=True)
+    #drop columns 1994 and 2014 from df_pop_nk3
+    df_pop_nk3.drop(columns=['1994', '2014'], inplace=True)
 
+#%%
 # Define color dictionary for food categories
 color_dict = {
-    'Fruits and nuts': '#FFA500',      # Orange
-    'Vegetables': '#90EE90',           # Light green
-    'Starchy vegetables': '#8B4513',   # Saddle brown
-    'Grains and cereals': '#F4A460',   # Sandy brown
-    'Legumes': '#556B2F',              # Dark olive green
-    'Dairy and alternatives': '#87CEEB', # Sky blue
-    'Eggs': '#FFE4B5',                 # Moccasin
-    'Poultry': '#DEB887',              # Burlywood
-    'Red meat': '#CD5C5C',             # Indian red
-    'Fish': '#4682B4',                 # Steel blue
-    'Fats and oils': '#FFD700',        # Gold
-    'Sweets and snacks': '#FF69B4',    # Hot pink
-    'Miscellaneous': '#808080'         # Grey
+    'Fruits and nuts': '#186a3b',
+    'Vegetables': '#28b463',
+    'Starchy vegetables': '#82e0aa',
+    'Grains and cereals': '#abebc6',
+    'Legumes': '#17a589',
+    'Dairy and alternatives': '#e59866',
+    'Red meat': '#d35400',
+    'Poultry': '#dc7633',
+    'Eggs': '#f5cba7',
+    'Fish': '#3498db',
+    'Fats and oils': '#eaecee',
+    'Sweets and snacks': '#808b96',
+    'Beverages': '#aab7b8',
+    'Miscellaneous': '#34495e'        
 }
 
 # Define the plotting function
@@ -142,28 +153,39 @@ def plot_population_pyramid(metric, ylabel, color_dict, NorkostVersion):
 
     # Use the appropriate dataset based on NorkostVersion
     if NorkostVersion == 'Norkost 2':
-        df = df_pop_nk2
+        df_pivot_nk2 = df_pop_nk2.pivot_table(
+        index=['AgeGroup', 'Gender'],
+        columns='FoodCategory',
+        values='Average amount consumed (g)',
+        aggfunc='sum',
+        fill_value=0
+        ).reset_index()
+        df = df_pivot_nk2  # Use the pivoted DataFrame
     elif NorkostVersion == 'Norkost 3':
-        df = df_pop_nk3
+        df_pivot_nk3 = df_pop_nk3.pivot_table(
+        index=['AgeGroup', 'Gender'],
+        columns='FoodCategory',
+        values='Average amount consumed (g)',
+        aggfunc='sum',
+        fill_value=0
+        ).reset_index()
+        df = df_pivot_nk3  # Ensure you have a pivoted DataFrame for Norkost 3
     else:
         print("Invalid NorkostVersion. Please specify 'Norkost 2' or 'Norkost 3'.")
         return
 
-    # Sum over AgeGroup and Gender for each category
-    pivot_data = df.groupby(['AgeGroup', 'Gender'])[desired_order].sum().reset_index()
-    pivot_data = pivot_data.set_index(['AgeGroup', 'Gender']).fillna(0)
-
     # Plot setup
     fig, ax = plt.subplots(figsize=(14, 10))
-    
     age_groups = sorted(df['AgeGroup'].unique())
-    
+
     for age_group in age_groups:
         for gender in ['Males', 'Females']:
-            if (age_group, gender) in pivot_data.index:
-                data = pivot_data.loc[(age_group, gender)]
+            data = df[(df['AgeGroup'] == age_group) & (df['Gender'] == gender)]
+            if data.empty:
+                data = pd.DataFrame(columns=desired_order)
+                data.loc[0] = [0] * len(desired_order)
             else:
-                data = pd.Series(0, index=desired_order)
+                data = data[desired_order].fillna(0).iloc[0]
 
             cumulative = 0
             for category in desired_order:
@@ -180,20 +202,21 @@ def plot_population_pyramid(metric, ylabel, color_dict, NorkostVersion):
     # Formatting
     ax.set_xlabel(ylabel)
     ax.set_ylabel('Age Group')
-    ax.set_title(f'{ylabel} by Age Group and Gender ({NorkostVersion})')
+    ax.set_title(f'{ylabel} of the population by Age Group and Gender based on ({NorkostVersion})')
 
     handles = [plt.Rectangle((0,0), 1, 1, color=color_dict.get(cat, '#333333')) for cat in desired_order]
     ax.legend(handles, desired_order, title='Food Categories', bbox_to_anchor=(1.05, 1), loc='upper left')
 
-    max_value = pivot_data[desired_order].sum(axis=1).max()
+    max_value = df[desired_order].sum(axis=1).max()
     ax.set_xlim(-max_value*1.05, max_value*1.05)
-    
+
     ax.text(max_value*0.8, age_groups[-1], 'Males', ha='center', va='bottom', fontsize=12, color='blue')
     ax.text(-max_value*0.8, age_groups[-1], 'Females', ha='center', va='bottom', fontsize=12, color='red')
     ax.axvline(0, color='black', linewidth=0.5)
 
     plt.tight_layout()
     plt.show()
+
 
 #%% Plotting the population pyramid for Energy Intake
 plot_population_pyramid(
@@ -202,3 +225,5 @@ plot_population_pyramid(
     color_dict=color_dict,
     NorkostVersion='Norkost 2'  # or 'Norkost 3'
 )
+
+# %%
