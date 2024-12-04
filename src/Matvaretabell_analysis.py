@@ -39,16 +39,16 @@ df_nutrient_totals.rename(columns={'Main Category': 'FoodCategory'}, inplace=Tru
 
 # Updated category mapping
 category_mapping = {
-    'Fruit and berries': 'Fruits and nuts',
-    'Nuts and seeds': 'Fruits and nuts',
-    'Vegetables': 'Vegetables',
+    'Fruit and berries': 'Vegetables, Fruits and nuts',
+    'Nuts and seeds': 'Vegetables, Fruits and nuts',
+    'Vegetables': 'Vegetables, Fruits and nuts',
     'Potatoes': 'Starchy vegetables',
-    'Cereals, bread and cakes': 'Grains and cereals',
-    'Dairy products': 'Dairy and alternatives',
+    'Cereals, bread and cakes': 'Grains, cereals and legumes',
+    'Dairy products': 'Dairy and egg',
     'Meat and poultry': 'Red meat',  # We'll handle poultry separately using the classify_meat function
-    'Egg': 'Eggs',
+    'Egg': 'Dairy and egg',
     'Fish and shellfish': 'Fish',
-    'Legumes': 'Legumes',
+    'Legumes': 'Grains, cereals and legumes',
     'Herbs and spices': 'Miscellaneous',
     'Sugar and sweet products': 'Sweets and snacks',
     'Beverages': 'Beverages',
@@ -56,7 +56,7 @@ category_mapping = {
     'Cooking fat': 'Fats and oils',
     'Infant food': 'Miscellaneous'
 }
-
+#%%
 # Function to classify poultry separately from red meat within the 'Meat and poultry' category
 def classify_meat(item, category):
     # If the category is "Red meat", we classify it based on keywords for poultry
@@ -123,3 +123,5 @@ ax[1].tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
 plt.show()
+
+# %%

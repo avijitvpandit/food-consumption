@@ -1,11 +1,34 @@
-#%% Importing the libraries
+#%% 
+# Importing the libraries
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import os
+from plot_functions import (
+    plot_energy_distribution,
+    plot_energy_by_age_group,
+    plot_average_consumption_by_gender,
+    plot_average_consumption_by_age_group,
+    plot_population_pyramid
+)
 
-#%% Load and clean the data for NORKOST 3
+#%%
+# In the first section of this file Norkost 3 is loaded and analysed 
+# Then norkost 2 is loaded, cleaned and exported 
+# The both are merged later and exported as one file to the auxillary data folder
+# g/day for 14 categories in nk3 and for xx categories in nk2 
+# Then the calories, protein, carbohydrates, fats and total Dry matter are calculated 
+# using the matvaretabellen 
+
+# NOTE : The calories calculated from matvaretabellen 
+# and calories from nk survey have a big discrepancy
+# TODO : Talk to NK lady and ask for g/ day 
+# to calories/day conversion key for food categories 
+
+#%% 
+# SECTION 1 : Norkost 3 
+# Load and clean the data for NORKOST 3
 path = os.path.join('..', 'data', 'raw', 'norkost')
 file_name = 'Norkost 3-data til NTNU.xlsx'
 file_path = os.path.join(path, file_name)
@@ -16,7 +39,7 @@ df_background = pd.read_excel(file_path, sheet_name=background_sheet)
 df_food_groups = pd.read_excel(file_path, sheet_name=foodgroups_sheet, header=2)
 df_energy = pd.read_excel(file_path, sheet_name=energy_sheet, header=None)
 
-#%% Cleaning the background data
+# Cleaning the background data
 df_background = df_background.iloc[:, :-3]  # Drop the last three columns
 df_background.drop(columns=['Hushold1'], inplace=True)  # Drop the household column
 df_background.rename(columns={'Nr': 'ID'}, inplace=True)  # Rename 'Nr' to 'ID'
@@ -38,20 +61,8 @@ df_background['Education'] = df_background['Education'].map({
     9: "Unanswered"
 })
 
-#%% Cleaning the food groups data
-df_food_groups = df_food_groups.dropna(how='all').reset_index(drop=True)  # Drop any fully empty rows
-df_food_groups = df_food_groups.dropna(axis=1, how='all')  # Drop any fully empty columns
-df_food_groups.rename(columns={'Nr': 'ID'}, inplace=True)
-
-# Handle NaN values in ID column by converting to numeric and dropping rows with NaN IDs
-df_food_groups['ID'] = pd.to_numeric(df_food_groups['ID'], errors='coerce')
-df_food_groups = df_food_groups.dropna(subset=['ID'])
-df_food_groups['ID'] = df_food_groups['ID'].astype(int)
-
-# Ensure that 'TOTALT' column exists and is numeric
-df_food_groups['TOTALT'] = pd.to_numeric(df_food_groups['TOTALT'], errors='coerce').fillna(0)
-
-#%% Cleaning the energy data
+####ENERGY #####
+#Cleaning the energy data
 df_energy = df_energy.iloc[3:].reset_index(drop=True)
 df_energy.columns = df_energy.iloc[0]  # Set the correct header
 df_energy = df_energy[['Nr', 'Energi']]  # Only keep 'Nr' and 'Energi' columns
@@ -60,21 +71,15 @@ df_energy.rename(columns={'Nr': 'ID', 'Energi': 'Energy'}, inplace=True)
 df_energy = df_energy.drop(1)  # Drop the second row (if necessary)
 df_energy.reset_index(drop=True, inplace=True)  # Reset the index
 df_energy['Energy'] = pd.to_numeric(df_energy['Energy'], errors='coerce') / 4.184  # Convert KJ to Kcal
-
-#%% 
-# Energy analysis
 # Merge df_background and df_energy
 df_energy_m = pd.merge(df_energy, df_background, on='ID')
-
 # Map gender numeric values to strings
 df_energy_m['Gender'] = df_energy_m['Gender'].map({1: 'Male', 2: 'Female'})
-
 # Calculate mean and standard deviation for each gender
 mean_energy_male = df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'].mean()
 std_energy_male = df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'].std()
 mean_energy_female = df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'].mean()
 std_energy_female = df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'].std()
-
 # Create 10-year age groups
 df_energy_m['AgeGroup'] = pd.cut(
     df_energy_m['Age'],
@@ -83,51 +88,18 @@ df_energy_m['AgeGroup'] = pd.cut(
     labels=[f'{i}-{i+9}' for i in range(0, 100, 10)]
 )
 
-# Create df_energy_long by age groups and gender
-df_energy_long = df_energy_m.groupby(['Gender', 'AgeGroup']).agg({
-    'Energy': 'mean'
-}).reset_index()
 
-# Rename the 'Energy' column to 'AverageEnergyIntake'
-df_energy_long.rename(columns={'Energy': 'AverageEnergyIntake'}, inplace=True)
-
-#Drop the NaN values in the 'AverageEnergyIntake' column
-df_energy_long = df_energy_long.dropna(subset=['AverageEnergyIntake'])
-
-#%%
-# Energy analysis
-# Plot energy distribution by mean energy intake for each gender
-plt.figure(figsize=(10, 6))
-sns.histplot(df_energy_m[df_energy_m['Gender'] == 'Male']['Energy'], kde=True, color='blue', label='Male')
-sns.histplot(df_energy_m[df_energy_m['Gender'] == 'Female']['Energy'], kde=True, color='pink', label='Female')
-plt.axvline(mean_energy_male, color='blue', linestyle='--', label=f'Mean Male: {mean_energy_male:.2f} Kcal')
-plt.axvline(mean_energy_male + std_energy_male, color='blue', linestyle=':', label=f'+1 Std Dev Male: {mean_energy_male + std_energy_male:.2f} Kcal')
-plt.axvline(mean_energy_male - std_energy_male, color='blue', linestyle=':', label=f'-1 Std Dev Male: {mean_energy_male - std_energy_male:.2f} Kcal')
-plt.axvline(mean_energy_female, color='pink', linestyle='--', label=f'Mean Female: {mean_energy_female:.2f} Kcal')
-plt.axvline(mean_energy_female + std_energy_female, color='pink', linestyle=':', label=f'+1 Std Dev Female: {mean_energy_female + std_energy_female:.2f} Kcal')
-plt.axvline(mean_energy_female - std_energy_female, color='pink', linestyle=':', label=f'-1 Std Dev Female: {mean_energy_female - std_energy_female:.2f} Kcal')
-plt.title('Energy Intake Distribution by Gender')
-plt.xlabel('Energy Intake (Kcal) per day')
-plt.ylabel('Frequency')
-plt.legend()
-plt.show()
-
-# Plot energy intake by age group and gender
-plt.figure(figsize=(14, 8))
-sns.boxplot(
-    x='AgeGroup',
-    y='Energy',
-    hue='Gender',
-    data=df_energy_m,
-    palette={'Male': 'blue', 'Female': 'pink'}
-)
-plt.title('Energy Intake by Age Group and Gender')
-plt.xlabel('Age Group')
-plt.ylabel('Energy Intake (Kcal) per day')
-plt.legend(title='Gender')
-plt.show()
-
-#%% Food groups analysis
+#### FOOD GROUPS ######
+#Cleaning the food groups data
+df_food_groups = df_food_groups.dropna(how='all').reset_index(drop=True)  # Drop any fully empty rows
+df_food_groups = df_food_groups.dropna(axis=1, how='all')  # Drop any fully empty columns
+df_food_groups.rename(columns={'Nr': 'ID'}, inplace=True)
+# Handle NaN values in ID column by converting to numeric and dropping rows with NaN IDs
+df_food_groups['ID'] = pd.to_numeric(df_food_groups['ID'], errors='coerce')
+df_food_groups = df_food_groups.dropna(subset=['ID'])
+df_food_groups['ID'] = df_food_groups['ID'].astype(int)
+# Ensure that 'TOTALT' column exists and is numeric
+df_food_groups['TOTALT'] = pd.to_numeric(df_food_groups['TOTALT'], errors='coerce').fillna(0)
 # Mapping the food groups to the correct category
 food_group_mapping = {
     'Fruits and nuts': [
