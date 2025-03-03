@@ -1,11 +1,13 @@
-#%% Importing the libraries
+#%% 
+# Importing the libraries
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import os
 
-#%% Load and clean the data for NORKOST 3
+#%% 
+# Load and clean the data for NORKOST 3 
 path = os.path.join('..', 'data', 'raw', 'norkost')
 file_name = 'Norkost 3-data til NTNU.xlsx'
 file_path = os.path.join(path, file_name)
@@ -16,7 +18,8 @@ df_background = pd.read_excel(file_path, sheet_name=background_sheet)
 df_food_groups = pd.read_excel(file_path, sheet_name=foodgroups_sheet, header=2)
 df_energy = pd.read_excel(file_path, sheet_name=energy_sheet, header=None)
 
-#%% Cleaning the background data
+#%% 
+# Cleaning the background data
 df_background = df_background.iloc[:, :-3]  # Drop the last three columns
 df_background.drop(columns=['Hushold1'], inplace=True)  # Drop the household column
 df_background.rename(columns={'Nr': 'ID'}, inplace=True)  # Rename 'Nr' to 'ID'
@@ -343,7 +346,7 @@ average_consumption_gender_age_long['Average amount consumed (g)'].fillna(0, inp
 
 
 #%% Import the food composition data
-food_composition_path = os.path.join('..', 'data', 'auxillary', 'food_composition.xlsx')
+food_composition_path = os.path.join('..', 'data', 'auxiliary', 'food_composition.xlsx')
 df_food_composition = pd.read_excel(food_composition_path)
 
 # Rename the index column to 'FoodCategory' to match
@@ -435,7 +438,7 @@ df_nutrient_totals = pd.merge(
 )
 
 # Export the df_nutrient_totals to an Excel file in auxillary folder
-output_path = os.path.join('..', 'data', 'auxillary', 'average percapita consumption_nk3.xlsx')
+output_path = os.path.join('..', 'data', 'auxiliary', 'average percapita consumption_nk3.xlsx')
 df_nutrient_totals.to_excel(output_path, index=False)
 print(f"Average consumption by gender and age group has been exported to {output_path}")
 
@@ -719,10 +722,12 @@ plot_population_pyramid('TotalCarbohydrates', 'Total Carbohydrates (g)', food_gr
 
 #%%
 # Export the df_nutrient_totals to an Excel file in auxillary folder
-output_path = os.path.join('..', 'data', 'auxillary', 'average percapita consumption_nk2.xlsx')
+output_path = os.path.join('..', 'data', 'auxiliary', 'average percapita consumption_nk2.xlsx')
 df_nutrient_totals_nk2.to_excel(output_path, index=False)
 print(f"Average consumption by gender and age group has been exported to {output_path}")
 
 
 # %%
-#
+
+
+# %%
